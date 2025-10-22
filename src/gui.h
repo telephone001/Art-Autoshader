@@ -40,7 +40,7 @@ typedef struct MenuOptions {
 
         int font_size; //will govern the size of the letters and textboxes in the gui
 
-        char img_path[GUI_IMG_PATH_BUFF_LEN]; //path where the image is stored
+        char img_path[GUI_IMG_PATH_BUFF_LEN]; //buffer where the image is stored. (textbox buffer)
         GLuint img_tex;   //glfw texture id of the image we want to use
         struct nk_image img_nk; //nk handler of the image
 
@@ -50,17 +50,23 @@ typedef struct MenuOptions {
 
 
 
-/// @brief will initialize settings of nuklear gui and will give you a gui menu object
-/// @param gui_menu menu object created by this function
-/// @param wnd glfw window
-/// @return error code. negative values for errors
-int nuklear_menu_init(MenuOptions *gui_menu, GLFWwindow *wnd);
+/// @brief This will do three main things:
+///		call nk_glfw3_init(wnd, NK_GLFW3_INSTALL_CALLBACKS) to set up the gui
+///		fill in the struct containing menu data
+/// 		set up the font of the gui using "fonts/american-typewriter.ttf"
+///
+/// @param gui_menu output: filled out gui_menu struct
+/// @param wnd glfw window handler
+/// @param font_path the path to the font you want to choose for the gui
+/// @param font_size how big the letters and textboxes should be in the gui
+/// @return 
+int nuklear_menu_init(MenuOptions *gui_menu, GLFWwindow *wnd, const char *const font_path, int font_size);
 
 
 
-/// @brief renders the nuklear menu. Use this in the drawloop
-/// @param wnd the window of the program to render the gui on
-void nuklear_menu_render(GLFWwindow *wnd);
+
+
+void nuklear_menu_render(GLFWwindow *wnd, MenuOptions *const gui_menu);
 
 
 #endif

@@ -26,10 +26,10 @@ int nuklear_menu_init(MenuOptions *gui_menu, GLFWwindow *wnd, const char *const 
 		// 0 for no image selected (will modify when choosing an image)
 		.img_path = {0}, //empty path
         	.img_tex = 0,	
-        	.nk_image img_nk = {0}; 
+        	.img_nk = {0},
 	};
 
-	ERR_ASSERT_RET((gui_menu.ctx != 0), -1, "nk_glfw3_init didn't work");
+	ERR_ASSERT_RET((gui_menu->ctx != 0), -1, "nk_glfw3_init didn't work");
 
 
         //set up font
@@ -39,12 +39,17 @@ int nuklear_menu_init(MenuOptions *gui_menu, GLFWwindow *wnd, const char *const 
 
         //set up font. last parameter = config and 0 = default config
     	struct nk_font *font = nk_font_atlas_add_from_file(atlas, font_path, font_size, 0);
-	ERR_ASSERT_RET((font == NULL), -3, "font couldn't be added");
+	ERR_ASSERT_RET((font != NULL), -3, "font couldn't be added");
 
 
    	nk_glfw3_font_stash_end();
 
-	nk_style_set_font(gui_menu.ctx, &font->handle);
+	nk_style_set_font(gui_menu->ctx, &font->handle);
+
+
+
+
+	
 
 	return 0;
 }
@@ -59,31 +64,44 @@ int nuklear_menu_init(MenuOptions *gui_menu, GLFWwindow *wnd, const char *const 
 
 
 
-static int state_main_render(struct nk_image *img, const MenuOptions *const gui_menu)
+static int state_main_render(const MenuOptions *const gui_menu)
 {
 	//TODO:
-	nk_layout_row_static(ctx, 30, 200, 1);
-	nk_edit_string_zero_terminated(ctx, NK_EDIT_FIELD, heightmap_buffer + 9, 256, nk_filter_default);
+	nk_layout_row_static(gui_menu->ctx, 30, 200, 1);
+	nk_edit_string_zero_terminated(gui_menu->ctx, NK_EDIT_FIELD, gui_menu->img_path, GUI_IMG_PATH_BUFF_LEN, nk_filter_default);
 
-
-
-	nk_layout_row_static(gui_menu.ctx, 30, GUI_DRAWMODE_BOX_LENGTH, 1);
-	nk_labelf(gui_menu.ctx, NK_TEXT_LEFT, "num samples =  %d", wave_selected->num_samples);
-
-	nk_layout_row_static(gui_menu.ctx, 30, GUI_DRAWMODE_BOX_LENGTH, 1);
-	nk_labelf(gui_menu.ctx, NK_TEXT_LEFT, "samples per second =  %d", wave_selected->samples_per_second);
 
 
 	//allocate some menu area for the image then render the image of the wave
-	nk_layout_row_begin(gui_menu.ctx, NK_STATIC, 150, 1);
-        nk_layout_row_push(gui_menu.ctx, 150);
-	nk_image(gui_menu.ctx, *img);
+	nk_layout_row_begin(gui_menu->ctx, NK_STATIC, 150, 1);
+        nk_layout_row_push(gui_menu->ctx, 150);
+	nk_image(gui_menu->ctx, (gui_menu->img_nk));
+
+	return 0;
 }
 
 
 
-void nuklear_menu_render(GLFWwindow *wnd)
+void nuklear_menu_render(GLFWwindow *wnd, MenuOptions *const gui_menu)
 {	
         //TODO
-}
+	nk_glfw3_new_frame();
+	
+	//if can't make menu, cleanup and return. This cannot be turned into a return assert
+	if (!nk_begin(gui_menu->ctx, "menu", nk_rect(0, 0, 225, 300),
+		     NK_WINDOW_BORDER | 
+		     NK_WINDOW_TITLE | 
+		     NK_WINDOW_MINIMIZABLE | 
+		     NK_WINDOW_MOVABLE | 
+		     NK_WINDOW_SCALABLE)) {
+		goto exit;
+	}
 
+	state_main_render(gui_menu);
+
+
+	exit:
+
+	nk_glfw3_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_BUFFER, MAX_ELEMENT_BUFFER);
+	nk_end(gui_menu->ctx);
+}

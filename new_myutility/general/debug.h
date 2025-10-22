@@ -5,6 +5,11 @@
 #include <stdio.h>
 
 
+#define ERR_ASSERT_RET_PRINT // for debugging FOR NOW
+
+
+
+
 #define PRINT_ERR(err) print_err_(__FILE__, __LINE__, __FUNCTION__, err)
 #define GL_PRINT_ERR() gl_print_err_(__FILE__, __LINE__, __FUNCTION__)
 

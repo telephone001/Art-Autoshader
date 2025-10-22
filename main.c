@@ -1,6 +1,10 @@
 #include <stdio.h>
 
+
+#include "src/gui.h"
 #include "general/debug.h"
+
+
 #include "opengl_util.h"
 #include "glfw_window.h"
 
@@ -20,6 +24,7 @@
 #define SCR_HEIGHT 800
 
 #define FOVY 45
+
 
 extern Camera camera; //handler for cameradata;
 extern int in_menu;   //menu status
@@ -91,6 +96,11 @@ int main()
                 NULL
         );
 
+
+        MenuOptions gui_menu;
+        int err = nuklear_menu_init(&gui_menu, wnd, "fonts/american-typewriter.ttf", 22); 
+        printf("%d\n", err);
+
         while (!glfwWindowShouldClose(wnd)) {
                 GL_PRINT_ERR();
                 static float last_frame;
@@ -107,6 +117,7 @@ int main()
 		
 		
 		if (in_menu) {
+                        nuklear_menu_render(wnd, &gui_menu);
         		glfwSetCursorPosCallback(wnd, NULL);
         	} else {
                 	handle_wasd_move(wnd, delta_time);
