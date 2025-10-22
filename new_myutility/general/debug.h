@@ -9,19 +9,26 @@
 #define GL_PRINT_ERR() gl_print_err_(__FILE__, __LINE__, __FUNCTION__)
 
 
-
-
 // will assert something. If it fails, it will return an int 
 // THIS WILL ONLY PRINT IF ERR_ASSERT_RET_PRINT IS DEFINED
-#define ERR_ASSERT_RET(cond, ret, msg)                                                                      \
-do {                                                                                                        \
-        if (!cond) {                                                                                        \
-#ifdef ERR_ASSERT_RET_PRINT                                                                                 \
-                fprintf(stderr, "ERROR in file %s func %s line %d: %s\n", filename, funcname, lineno, msg); \
-#endif                                                                                                      \
-        return ret;                                                                                         \
-        }                                                                                                   \
-} while (0)
+#ifdef ERR_ASSERT_RET_PRINT
+        #define ERR_ASSERT_RET(cond, ret, msg)                                                                             \
+        do {                                                                                                               \
+                if (!cond) {                                                                                               \
+                        fprintf(stderr, "ERROR in file %s func %s line %d: %s\n", __FILE__,  __FUNCTION__, __LINE__, msg); \
+                        return ret;                                                                                        \
+                }                                                                                                          \
+        } while (0)
+#else 
+        #define ERR_ASSERT_RET(cond, ret, msg)                                                                             \
+        do {                                                                                                               \
+                if (!cond) {                                                                                               \
+                        return ret;                                                                                        \
+                }                                                                                                          \
+        } while (0)
+#endif       
+
+
 
 
 
