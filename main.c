@@ -44,8 +44,28 @@ void opengl_settings_init()
 	glm_perspective(glm_rad(FOVY), (float)SCR_LENGTH / SCR_HEIGHT, 0.1f, 4000.0f, cam_projection);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(mat4), cam_projection);
         
-        glClearColor(1,1,1,1);
+        glClearColor(0.8,0.8,0.8,1);
 
+}
+
+
+void modified_key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
+{
+        key_callback(window, key, scancode, action, mods);
+	
+        
+	if (key == GLFW_KEY_H) {
+		switch (action) {
+		case GLFW_PRESS:
+			camera.speed = NORMAL_CAMERA_SPEED / 5;
+			break;
+
+                default:
+                        break;
+                }
+	}
+
+	
 }
 
 
