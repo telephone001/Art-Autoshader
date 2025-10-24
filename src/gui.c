@@ -55,21 +55,20 @@ int nuklear_menu_init(MenuOptions *gui_menu, GLFWwindow *wnd, const char *const 
 }
 
 
-
-
-//TODO DOCUMENT::::::::::::::::::::::::
-
-
-
-
-
+// :::::::::::::::TODO:::::::::::::::::::
 
 static int state_main_render(const MenuOptions *const gui_menu)
 {
-	//TODO:
+	//TODO you are ignoring a lot of potential error messages here but this is for prototype
+
+
 	nk_layout_row_static(gui_menu->ctx, 30, 200, 1);
 	nk_edit_string_zero_terminated(gui_menu->ctx, NK_EDIT_FIELD, gui_menu->img_path, GUI_IMG_PATH_BUFF_LEN, nk_filter_default);
 
+
+	if (nk_button_label(gui_menu.ctx, "use image")) {
+		nk_layout_row_static(gui_menu.ctx, 30, GUI_DRAWMODE_BOX_LENGTH, 1);
+	}
 
 
 	//allocate some menu area for the image then render the image of the wave
@@ -77,14 +76,17 @@ static int state_main_render(const MenuOptions *const gui_menu)
         nk_layout_row_push(gui_menu->ctx, 150);
 	nk_image(gui_menu->ctx, (gui_menu->img_nk));
 
+
+
 	return 0;
 }
 
 
-
+/// @brief This is a drawcall for the gui menu
+/// @param wnd window to render the menu onto
+/// @param gui_menu gui menu
 void nuklear_menu_render(GLFWwindow *wnd, MenuOptions *const gui_menu)
 {	
-        //TODO
 	nk_glfw3_new_frame();
 	
 	//if can't make menu, cleanup and return. This cannot be turned into a return assert
@@ -97,9 +99,12 @@ void nuklear_menu_render(GLFWwindow *wnd, MenuOptions *const gui_menu)
 		goto exit;
 	}
 
+
+	//render the stuff inside the menu
 	state_main_render(gui_menu);
 
 
+	//necessary code for rendering
 	exit:
 
 	nk_glfw3_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_BUFFER, MAX_ELEMENT_BUFFER);
