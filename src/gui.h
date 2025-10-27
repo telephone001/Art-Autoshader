@@ -17,10 +17,10 @@
 #define  NK_INCLUDE_DEFAULT_FONT
 #define  NK_KEYSTATE_BASED_INPUT
 
-#include <nuklear/nuklear.h>
-#include <nuklear/nuklear_glfw_gl3.h>
+#include <nuklear.h>
+#include <nuklear_glfw_gl3.h>
 
-#include <STB/stb_include.h>
+#include <stb_include.h>
 
 #define GUI_NK_MAX_INPUT_LEN 17
 

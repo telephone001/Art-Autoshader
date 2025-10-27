@@ -18,7 +18,7 @@
 #include <glad/glad.h>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include <STB/stb_include.h>
+#include <stb_include.h>
 
 #define SCR_LENGTH 800
 #define SCR_HEIGHT 800

@@ -1,10 +1,7 @@
-libglfw3WSL created by cmake and make using the WSL
-used for making x11 applications for wsl
+Required:
 
-libglfw3 + libglfw3dll created by getting glfw downloaded from msys x86 environment then copying those .a files to the lib directory
-
-glad.c from glad website
-
-libcglm created by cmake and make in WSL
+libcglm.a
+libglfw.a
+libglfw3.dll.a
 
 
