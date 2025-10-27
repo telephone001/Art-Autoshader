@@ -10,6 +10,3 @@
 [submodule "lib/Nuklear"]
 	path = lib/Nuklear
 	url = https://github.com/Immediate-Mode-UI/Nuklear
-[submodule "lib/glad"]
-	path = lib/glad
-	url = https://github.com/Dav1dde/glad.git
