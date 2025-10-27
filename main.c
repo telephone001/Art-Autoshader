@@ -73,7 +73,6 @@ void modified_key_callback(GLFWwindow *window, int key, int scancode, int action
 	
 }
 
-
 int main() 
 {
         if (!glfwInit()) {
@@ -101,6 +100,8 @@ int main()
         int err = nuklear_menu_init(&gui_menu, wnd, "fonts/american-typewriter.ttf", 22); 
         printf("%d\n", err);
 
+        
+
         while (!glfwWindowShouldClose(wnd)) {
                 GL_PRINT_ERR();
                 static float last_frame;
@@ -116,14 +117,28 @@ int main()
 		glBufferSubData(GL_UNIFORM_BUFFER, sizeof(mat4s), sizeof(mat4s), (float*)&cam_view);
 		
 		
+
+
 		if (in_menu) {
                         nuklear_menu_render(wnd, &gui_menu);
         		glfwSetCursorPosCallback(wnd, NULL);
+
+                        glfwSetScrollCallback(wnd, nk_gflw3_scroll_callback);
+                        glfwSetCharCallback(wnd, nk_glfw3_char_callback);
+                        glfwSetKeyCallback(wnd, nk_glfw3_key_callback);
+                        glfwSetMouseButtonCallback(wnd, nk_glfw3_mouse_button_callback);
+
         	} else {
                 	handle_wasd_move(wnd, delta_time);
                 	glfwSetCursorPosCallback(wnd, mouse_callback);
+
+	                glfwSetKeyCallback(wnd, key_callback);
+	                glfwSetCursorPosCallback(wnd, mouse_callback);
+
+                        glfwSetScrollCallback(wnd, NULL);
+                        glfwSetCharCallback(wnd, NULL);
+                        glfwSetMouseButtonCallback(wnd, NULL);
 		}
-        
                 
                 glfwSwapBuffers(wnd);
                 glfwPollEvents();

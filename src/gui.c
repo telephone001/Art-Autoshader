@@ -17,24 +17,27 @@ int nuklear_menu_init(MenuOptions *gui_menu, GLFWwindow *wnd, const char *const 
 {
 	//initialize menu and also fill in some stuff
 	*gui_menu = (MenuOptions){
-		.ctx = nk_glfw3_init(wnd, NK_GLFW3_INSTALL_CALLBACKS),  //actually create the gui
+		//THESE ARE CREATED LATER IN THIS FUNCTION
+		.ctx = 0, 
+		.glfw = {0},
 		
 		.state = MENU_STATE_MAIN,   
 		
 		.font_size = font_size,
 
-		// 0 for no image selected (will modify when choosing an image)
+		// 0 for no image selected currently (will modify when choosing an image)
 		.img_path = {0}, //empty path
         	.img_tex = 0,	
         	.img_nk = {0},
 	};
+	gui_menu->ctx = nk_glfw3_init(&gui_menu->glfw, wnd, NK_GLFW3_INSTALL_CALLBACKS);
 
 	ERR_ASSERT_RET((gui_menu->ctx != 0), -1, "nk_glfw3_init didn't work");
 
 
         //set up font
         struct nk_font_atlas* atlas;
-        nk_glfw3_font_stash_begin(&atlas);
+        nk_glfw3_font_stash_begin(&gui_menu->glfw, &atlas);
 	ERR_ASSERT_RET((atlas != NULL), -2, "nk_glfw3_init didn't work");
 
         //set up font. last parameter = config and 0 = default config
@@ -42,7 +45,7 @@ int nuklear_menu_init(MenuOptions *gui_menu, GLFWwindow *wnd, const char *const 
 	ERR_ASSERT_RET((font != NULL), -3, "font couldn't be added");
 
 
-   	nk_glfw3_font_stash_end();
+   	nk_glfw3_font_stash_end(&gui_menu->glfw);
 
 	nk_style_set_font(gui_menu->ctx, &font->handle);
 
@@ -66,8 +69,8 @@ static int state_main_render(const MenuOptions *const gui_menu)
 	nk_edit_string_zero_terminated(gui_menu->ctx, NK_EDIT_FIELD, gui_menu->img_path, GUI_IMG_PATH_BUFF_LEN, nk_filter_default);
 
 
-	if (nk_button_label(gui_menu.ctx, "use image")) {
-		nk_layout_row_static(gui_menu.ctx, 30, GUI_DRAWMODE_BOX_LENGTH, 1);
+	if (nk_button_label(gui_menu->ctx, "use image")) {
+		nk_layout_row_static(gui_menu->ctx, 30, 32, 1);
 	}
 
 
@@ -87,7 +90,7 @@ static int state_main_render(const MenuOptions *const gui_menu)
 /// @param gui_menu gui menu
 void nuklear_menu_render(GLFWwindow *wnd, MenuOptions *const gui_menu)
 {	
-	nk_glfw3_new_frame();
+	nk_glfw3_new_frame(&gui_menu->glfw);
 	
 	//if can't make menu, cleanup and return. This cannot be turned into a return assert
 	if (!nk_begin(gui_menu->ctx, "menu", nk_rect(0, 0, 225, 300),
@@ -107,6 +110,6 @@ void nuklear_menu_render(GLFWwindow *wnd, MenuOptions *const gui_menu)
 	//necessary code for rendering
 	exit:
 
-	nk_glfw3_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_BUFFER, MAX_ELEMENT_BUFFER);
+	nk_glfw3_render(&gui_menu->glfw, NK_ANTI_ALIASING_ON, MAX_VERTEX_BUFFER, MAX_ELEMENT_BUFFER);
 	nk_end(gui_menu->ctx);
 }

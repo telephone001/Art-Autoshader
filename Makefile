@@ -3,7 +3,8 @@ CC = gcc
 myutil := ./new_myutility
 lib := ./lib
 
-include := cglm/include glfw/include Nuklear/demo/glfw_opengl3 Nuklear/src stb glad/include
+# Nuklear/demo/glfw_opengl3 has been moved to newmyutility so nuklear doesn't change how our gui looks later
+include := cglm/include glfw/include Nuklear stb glad/include
 
 
 #for including all the necessary paths.

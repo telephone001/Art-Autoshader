@@ -36,6 +36,7 @@ typedef enum MenuState {
 /// @brief 
 typedef struct MenuOptions {
         struct nk_context *ctx; //context for nuklear window
+        struct nk_glfw glfw;    //rendering data for the menu
         MenuState state;        //what window the program is in
 
         int font_size; //will govern the size of the letters and textboxes in the gui
