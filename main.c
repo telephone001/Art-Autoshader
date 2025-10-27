@@ -54,24 +54,43 @@ void opengl_settings_init()
 }
 
 
-void modified_key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
+void key_callback_menu_switching(GLFWwindow *wnd, int key, int scancode, int action, int mods)
 {
-        key_callback(window, key, scancode, action, mods);
-	
-        
-	if (key == GLFW_KEY_H) {
-		switch (action) {
-		case GLFW_PRESS:
-			camera.speed = NORMAL_CAMERA_SPEED / 5;
-			break;
+        if (in_menu) {
+                glfwSetScrollCallback(wnd, nk_gflw3_scroll_callback);
+                glfwSetCharCallback(wnd, nk_glfw3_char_callback);
+                glfwSetMouseButtonCallback(wnd, nk_glfw3_mouse_button_callback);
 
-                default:
-                        break;
-                }
+                //this will do the nuklear key callback
+                nk_glfw3_key_callback(wnd, key, scancode, action, mods);
+
+        } else {
+	        glfwSetCursorPosCallback(wnd, mouse_callback);
+
+                //this can be changed to the normal callbacks
+                glfwSetScrollCallback(wnd, NULL);
+                glfwSetCharCallback(wnd, NULL);
+                glfwSetMouseButtonCallback(wnd, NULL);
 	}
 
-	
+
+        static double last_x_pos, last_y_pos;
+
+        // in addition to the nuklear callback, I will overwrite their esc functionality
+        // so the program can exit gui mode using esc
+        if (key == GLFW_KEY_ESCAPE && action != GLFW_PRESS) {
+	        if (in_menu) {
+	        	glfwSetInputMode(wnd, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	        	glfwSetCursorPos(wnd, last_x_pos, last_y_pos);
+	        } else {
+	        	glfwGetCursorPos(wnd, &last_x_pos, &last_y_pos);
+	        	glfwSetInputMode(wnd, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	        }
+
+	        in_menu = !in_menu;
+	}
 }
+
 
 int main() 
 {
@@ -100,6 +119,8 @@ int main()
         int err = nuklear_menu_init(&gui_menu, wnd, "fonts/american-typewriter.ttf", 22); 
         printf("%d\n", err);
 
+        // this is required AFTER nuklear_menu_init because it uses the callbacks
+        glfwSetKeyCallback(wnd, key_callback_menu_switching);
         
 
         while (!glfwWindowShouldClose(wnd)) {
@@ -122,22 +143,9 @@ int main()
 		if (in_menu) {
                         nuklear_menu_render(wnd, &gui_menu);
         		glfwSetCursorPosCallback(wnd, NULL);
-
-                        glfwSetScrollCallback(wnd, nk_gflw3_scroll_callback);
-                        glfwSetCharCallback(wnd, nk_glfw3_char_callback);
-                        glfwSetKeyCallback(wnd, nk_glfw3_key_callback);
-                        glfwSetMouseButtonCallback(wnd, nk_glfw3_mouse_button_callback);
-
         	} else {
                 	handle_wasd_move(wnd, delta_time);
                 	glfwSetCursorPosCallback(wnd, mouse_callback);
-
-	                glfwSetKeyCallback(wnd, key_callback);
-	                glfwSetCursorPosCallback(wnd, mouse_callback);
-
-                        glfwSetScrollCallback(wnd, NULL);
-                        glfwSetCharCallback(wnd, NULL);
-                        glfwSetMouseButtonCallback(wnd, NULL);
 		}
                 
                 glfwSwapBuffers(wnd);

@@ -88,46 +88,6 @@ void handle_wasd_move(GLFWwindow *const window, float delta_time)
 	}
 }
 
-void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
-{
-	if (key == GLFW_KEY_LEFT_SHIFT) {
-		switch (action) {
-		case GLFW_PRESS:
-			camera.speed = NORMAL_CAMERA_SPEED / 5;
-			break;
-		
-		case GLFW_RELEASE:
-			camera.speed = NORMAL_CAMERA_SPEED;
-			break;
-		}
-	}
-	
-	if (key == GLFW_KEY_LEFT_CONTROL) {
-		switch (action) {
-		case GLFW_PRESS:
-			camera.speed = NORMAL_CAMERA_SPEED * 3;
-			break;
-
-		case GLFW_RELEASE:
-			camera.speed = NORMAL_CAMERA_SPEED;
-			break;
-		}
-	}
-
-	static double last_x_pos, last_y_pos;
-	if (key == GLFW_KEY_ESCAPE && action != GLFW_PRESS) {
-		if (in_menu) {
-			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-			glfwSetCursorPos(window, last_x_pos, last_y_pos);
-		} else {
-			glfwGetCursorPos(window, &last_x_pos, &last_y_pos);
-			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-		}
-
-		in_menu = !in_menu;
-	}
-}
-
 void mouse_callback(GLFWwindow *window, double x_pos, double y_pos)
 {
 	static int first_mouse = 1; //checks if this is the first time the function was called
@@ -195,53 +155,6 @@ void framebuffer_size_callback(GLFWwindow *const window, int width, int height)
 	glViewport(0, 0, width, height);
 }
 
-void APIENTRY gl_debug_output(GLenum source, 
-                            GLenum type, 
-                            unsigned int id, 
-                            GLenum severity, 
-                            GLsizei length, 
-                            const char *message, 
-                            const void *userParam)
-{
-    	// ignore non-significant error/warning codes
-    	if(id == 131169 || id == 131185 || id == 131218 || id == 131204) return; 
-
-    	fprintf(stderr, "---------------");
-    	fprintf(stderr, "Debug message (%d): %s\n", id, message);
-
-    	switch (source) {
-    	case GL_DEBUG_SOURCE_API:             fprintf(stderr, "Source: API"			); break;
-    	case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   fprintf(stderr, "Source: Window System"		); break;
-    	case GL_DEBUG_SOURCE_SHADER_COMPILER: fprintf(stderr, "Source: Shader Compiler"		); break;
-    	case GL_DEBUG_SOURCE_THIRD_PARTY:     fprintf(stderr, "Source: Third Party"		); break;
-    	case GL_DEBUG_SOURCE_APPLICATION:     fprintf(stderr, "Source: Application"		); break;
-    	case GL_DEBUG_SOURCE_OTHER:           fprintf(stderr, "Source: Other"			); break;
-    	}
-    	fprintf(stderr, "\n");
-
-    	switch (type) {
-    	case GL_DEBUG_TYPE_ERROR:               fprintf(stderr, "Type: Error"			); break;
-    	case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: fprintf(stderr, "Type: Deprecated Behaviour"	); break;
-    	case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  fprintf(stderr, "Type: Undefined Behaviour"	); break; 
-    	case GL_DEBUG_TYPE_PORTABILITY:         fprintf(stderr, "Type: Portability"		); break;
-    	case GL_DEBUG_TYPE_PERFORMANCE:         fprintf(stderr, "Type: Performance"		); break;
-    	case GL_DEBUG_TYPE_MARKER:              fprintf(stderr, "Type: Marker"			); break;
-    	case GL_DEBUG_TYPE_PUSH_GROUP:          fprintf(stderr, "Type: Push Group"		); break;
-    	case GL_DEBUG_TYPE_POP_GROUP:           fprintf(stderr, "Type: Pop Group"		); break;
-    	case GL_DEBUG_TYPE_OTHER:               fprintf(stderr, "Type: Other"			); break;
-    	}
-    	fprintf(stderr, "\n");
-	
-    	switch (severity) {
-    	case GL_DEBUG_SEVERITY_HIGH:         fprintf(stderr, "Severity: high"		); break;
-    	case GL_DEBUG_SEVERITY_MEDIUM:       fprintf(stderr, "Severity: medium"		); break;
-    	case GL_DEBUG_SEVERITY_LOW:          fprintf(stderr, "Severity: low"		); break;
-    	case GL_DEBUG_SEVERITY_NOTIFICATION: fprintf(stderr, "Severity: notification"	); break;
-    	}
-    	fprintf(stderr, "\n\n");
-}
-
-
 GLFWwindow *glfw_setup(int major_version, int minor_version, 
 		       unsigned int screen_width, unsigned int screen_height, 
 		       const char *const window_name)
@@ -272,20 +185,8 @@ GLFWwindow *glfw_setup(int major_version, int minor_version,
 
 	//callbacks
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-	glfwSetKeyCallback(window, key_callback);
 	glfwSetCursorPosCallback(window, mouse_callback);
 
-	//get debug callback if opengl 4.3 or higher
-	if (major_version > 4 || (major_version == 4 && minor_version >= 3)) {
-		int flags; 
-        	glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
-        	if (flags & GL_CONTEXT_FLAG_DEBUG_BIT) {
-        	        glEnable(GL_DEBUG_OUTPUT);
-        	        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS); // makes sure errors are displayed synchronously
-        	        glDebugMessageCallback(gl_debug_output, NULL);
-        	        glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
-        	}
-	}
 
 	
 

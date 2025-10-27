@@ -44,8 +44,6 @@ void framebuffer_size_callback(GLFWwindow *const window, int width, int height);
 
 void mouse_callback(GLFWwindow *window, double x_pos, double y_pos);
 
-void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
-
 void handle_wasd_move(GLFWwindow *const window, float delta_time);
 
 GLFWwindow *glfw_setup(int major_version, 
