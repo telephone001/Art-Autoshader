@@ -109,11 +109,11 @@ void key_callback_menu_switching(GLFWwindow *wnd, int key, int scancode, int act
 /// @brief will output the renderdata of a wireframe of a camera projection. Note that this renderdata allocates 
 ///             memory for its vertex buffer! make sure to free it!!!
 /// @param render_data the outputted render data for the wireframe of a camera projection
-/// @param fovy 
-/// @param aspect_ratio 
+/// @param fovy the fovy of the camera.
+/// @param aspect_ratio the aspect ratio of the camera.
 /// @param cam_pos the 3d position of the camera
 /// @param plane_pos the 3d position of the center of a perpendicular plane of the camera
-/// @param up the camera's up vector.
+/// @param up the camera's up vector. Has to be normalized
 /// @return 0 on success negatives on error
 int cam_proj_mdl_init(
         RenderData *render_data, 
@@ -128,20 +128,19 @@ int cam_proj_mdl_init(
         vec3s cam_front = glms_vec3_sub(plane_pos, cam_pos);
 
         //nomalized vectors of right and forward
-        vec3s front_dir = glms_vec3_normalize(cam_forward);
-        vec3s right_dir = glms_vec3_crossn(cam_front, up);
+        vec3s right_dir = glms_vec3_crossn(cam_front, cam_up);
 
         //the dist between rectangle origin and rectangle top
-        float dist_up = sin(fovy/2) * glms_vec3_norm(cam_forward);
+        float dist_up = sin(fovy/2) * glms_vec3_norm(cam_front);
 
         //the dist between rectangle origin and the rightost point of the rectangle
         float dist_right = dist_up * aspect_ratio;
 
         //find the four rectangle points:
-        //vec3s r0 = cam_pos - front_dir * dist_up - right_dir * dist_right
-        //vec3s r1 = cam_pos - front_dir * dist_up + right_dir * dist_right
-        //vec3s r2 = cam_pos + front_dir * dist_up - right_dir * dist_right
-        //vec3s r3 = cam_pos + front_dir * dist_up + right_dir * dist_right
+        //vec3s r0 = cam_pos - cam_up * dist_up - right_dir * dist_right
+        //vec3s r1 = cam_pos - cam_up * dist_up + right_dir * dist_right
+        //vec3s r2 = cam_pos + cam_up * dist_up - right_dir * dist_right
+        //vec3s r3 = cam_pos + cam_up * dist_up + right_dir * dist_right
 
         vec3s rect[4];
         for (int i = 0; i < 4; i++) {
@@ -153,10 +152,10 @@ int cam_proj_mdl_init(
         rect[2] = glms_vec3_add(rect[2], glms_vec3_scale(cam_up,  dist_up));
         rect[3] = glms_vec3_add(rect[3], glms_vec3_scale(cam_up,  dist_up));
 
-        rect[0] = glms_vec3_add(rect[0], glms_vec3_scale(cam_right, -dist_right));
-        rect[1] = glms_vec3_add(rect[1], glms_vec3_scale(cam_right,  dist_right));
-        rect[2] = glms_vec3_add(rect[2], glms_vec3_scale(cam_right, -dist_right));
-        rect[3] = glms_vec3_add(rect[3], glms_vec3_scale(cam_right,  dist_right));
+        rect[0] = glms_vec3_add(rect[0], glms_vec3_scale(right_dir, -dist_right));
+        rect[1] = glms_vec3_add(rect[1], glms_vec3_scale(right_dir,  dist_right));
+        rect[2] = glms_vec3_add(rect[2], glms_vec3_scale(right_dir, -dist_right));
+        rect[3] = glms_vec3_add(rect[3], glms_vec3_scale(right_dir,  dist_right));
 
 
 
@@ -175,24 +174,24 @@ int cam_proj_mdl_init(
         *render_data = (RenderData) {
 	        
                 // will be filled out below
-                vao = 0, 
-	        vbo = 0, 
-	        ebo = 0, 
+                .vao = 0, 
+	        .vbo = 0, 
+	        .ebo = 0, 
 
-	        vertices = malloc(sizeof(vec3s) * 5), //we only need 5 points
-	        vertices_stride = 3,                  //has to be 3 cuz of vec3
-	        vertices_length = 3 * 5,
+	        .vertices = malloc(sizeof(vec3s) * 5), //we only need 5 points
+	        .vertices_stride = 3,                  //has to be 3 cuz of vec3
+	        .vertices_length = 3 * 5,
 
-	        indices = malloc(sizeof(unsigned int) * 2 * 10), //10 because there are 10 ways to connect each of the 5 points
-	        indices_stride = 2, // 2 because we are rendering lines
-	        indices_length = 2 * 10,
+	        .indices = malloc(sizeof(unsigned int) * 2 * 10), //10 because there are 10 ways to connect each of the 5 points
+	        .indices_stride = 2, // 2 because we are rendering lines
+	        .indices_length = 2 * 10,
 
-	        GLuint *textures = NULL; //no textures
-	        int num_textures = 0;    // nope.
+	        .textures = NULL, //no textures
+	        .num_textures = 0,    // nope.
 
-	        GLenum primitive_type = GL_LINES;
-	        GLuint shader = shader_basic;
-        }
+	        .primitive_type = GL_LINES,
+	        .shader = shader_basic,
+        };
 
         ERR_ASSERT_RET((render_data->vertices != NULL), -2, "malloc failed");
         ERR_ASSERT_RET((render_data->indices != NULL), -2, "malloc failed");
@@ -203,7 +202,7 @@ int cam_proj_mdl_init(
         ERR_ASSERT_RET((render_data->vao != 0), -3, "vao failed");
         ERR_ASSERT_RET((render_data->vbo != 0), -4, "vbo failed");
 
-
+        
         bind_ebo(&(render_data->ebo), render_data->indices, sizeof(unsigned int) * render_data->indices_length, GL_STATIC_DRAW);
 
         ERR_ASSERT_RET((render_data->vao != 0), -5, "ebo failed");
