@@ -42,6 +42,8 @@ typedef struct RenderData {
 
 RenderData renderdata_init_clear();
 
+void render_data_free(RenderData *render_data);
+
 GLuint compile_shader(const char *const path, int type);
 
 GLuint add_shader(GLuint shader_program, const char *const path, unsigned int shader_type);

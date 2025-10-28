@@ -28,6 +28,26 @@ RenderData renderdata_init_clear()
 	return data;
 }
 
+/// @brief frees the malloced stuff from cam_proj_render_data
+/// @param render_data the renderdata you wanna free
+void render_data_free(RenderData *render_data)
+{
+        free(render_data->indices);
+        render_data->indices = NULL;
+
+        free(render_data->vertices);
+        render_data = NULL;
+        
+
+        glDeleteVertexArrays(1, &render_data->vao);
+        render_data->vao = 0;
+
+        glDeleteBuffers(1, &render_data->vbo);
+        render_data->vbo = 0;
+
+        glDeleteBuffers(1, &render_data->ebo);
+        render_data->ebo = 0;
+}
 
 /// @brief reads shader files and stores result in a string that is returned. 
 /// 		  Prone to bugs because of limited buffer and uses malloc

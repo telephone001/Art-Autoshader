@@ -92,28 +92,6 @@ void key_callback_menu_switching(GLFWwindow *wnd, int key, int scancode, int act
 }
 
 
-typedef struct RenderData {
-	GLuint vao;
-	GLuint vbo;
-	GLuint ebo;
-
-	float *vertices;
-	unsigned int vertices_stride;
-	unsigned int vertices_length;
-
-	unsigned int *indices;
-	unsigned int indices_stride;
-	unsigned int indices_length;
-
-	GLuint *textures;
-	int num_textures;
-
-	GLenum polygon_mode;
-	GLuint shader;
-} RenderData;
-
-
-
 /// @brief will output the renderdata of a wireframe of a camera projection. Note that this renderdata allocates 
 ///             memory for its vertex buffer! make sure to free it!!!
 /// @param render_data the outputted render data for the wireframe of a camera projection
@@ -139,15 +117,11 @@ int cam_proj_mdl_init(
         vec3s front_dir = glms_vec3_normalize(cam_forward);
         vec3s right_dir = glms_vec3_crossn(cam_front, up);
 
-
-
         //the dist between rectangle origin and rectangle top
         float dist_up = sin(fovy/2) * glms_vec3_norm(cam_forward);
 
         //the dist between rectangle origin and the rightost point of the rectangle
         float dist_right = dist_up * aspect_ratio;
-
-        
 
         //find the four rectangle points:
         //vec3s r0 = cam_pos - front_dir * dist_up - right_dir * dist_right
@@ -156,18 +130,15 @@ int cam_proj_mdl_init(
         //vec3s r3 = cam_pos + front_dir * dist_up + right_dir * dist_right
 
         vec3s rect[4];
-
         for (int i = 0; i < 4; i++) {
                 rect[i] = cam_pos;
         }
         
-
         rect[0] = glms_vec3_add(rect[0], glms_vec3_scale(cam_up, -dist_up));
         rect[1] = glms_vec3_add(rect[1], glms_vec3_scale(cam_up, -dist_up));
         rect[2] = glms_vec3_add(rect[2], glms_vec3_scale(cam_up,  dist_up));
         rect[3] = glms_vec3_add(rect[3], glms_vec3_scale(cam_up,  dist_up));
 
-        
         rect[0] = glms_vec3_add(rect[0], glms_vec3_scale(cam_right, -dist_right));
         rect[1] = glms_vec3_add(rect[1], glms_vec3_scale(cam_right,  dist_right));
         rect[2] = glms_vec3_add(rect[2], glms_vec3_scale(cam_right, -dist_right));
@@ -177,9 +148,19 @@ int cam_proj_mdl_init(
 
         //we should have 5 points for our vertices. (the 4 above and the cam pos) 
         //Now we start filling in the renderdata
+
+        GLuint shader_basic = create_shader_program(
+                "shaders/basic.vert",
+                "shaders/basic.frag", 
+                NULL, 
+                NULL, 
+                NULL
+        );
+	ERR_ASSERT_RET((shader_basic != 0), -1, "basic shader didn't work");
+
         *render_data = (RenderData) {
 	        
-                // will be filled out
+                // will be filled out below
                 vao = 0, 
 	        vbo = 0, 
 	        ebo = 0, 
@@ -195,12 +176,40 @@ int cam_proj_mdl_init(
 	        GLuint *textures = NULL; //no textures
 	        int num_textures = 0;    // nope.
 
-	        GLenum polygon_mode;    //
-	        GLuint shader;
+	        GLenum primitive_type = GL_LINES;
+	        GLuint shader = shader_basic;
         }
 
+        ERR_ASSERT_RET((render_data->vertices != NULL), -2, "malloc failed");
+        ERR_ASSERT_RET((render_data->indices != NULL), -2, "malloc failed");
+        
 
-        //
+        bind_vao_and_vbo(&(render_data->vao), &(render_data->vbo), render_data->vertices, sizeof(float) * render_data->vertices_length, GL_STATIC_DRAW);
+        
+        ERR_ASSERT_RET((render_data->vao != 0), -3, "vao failed");
+        ERR_ASSERT_RET((render_data->vbo != 0), -4, "vbo failed");
+
+
+        bind_ebo(&(render_data->ebo), render_data->indices, sizeof(unsigned int) * render_data->indices_length, GL_STATIC_DRAW);
+
+        ERR_ASSERT_RET((render_data->vao != 0), -5, "ebo failed");
+
+        
+	//position attribute
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, render_data->vertices_stride * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+        
+
+        return 0;
+}
+
+/// @brief simple command to render a cam_proj model. 
+/// @param cam_proj_render_data the renderdata of the thing you want to render (has to be initialized first)
+void cam_proj_mdl_render(RenderData *cam_proj_render_data)
+{
+        glBindVertexArray(cam_proj_render_data->vao);
+	glUseProgram(cam_proj_render_data->shader);
+	glDrawElements(cam_proj_render_data->primitive_type, cam_proj_render_data->indices_length, GL_UNSIGNED_INT, 0);
 }
 
 int main() 
@@ -214,16 +223,6 @@ int main()
 	    	return -1;
 
         opengl_settings_init();
-
-
-
-        GLuint plane = create_shader_program(
-                "shaders/basic.vert",
-                "shaders/basic.frag", 
-                NULL, 
-                NULL, 
-                NULL
-        );
 
 
         MenuOptions gui_menu;
