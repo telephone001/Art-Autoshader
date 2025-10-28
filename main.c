@@ -147,14 +147,14 @@ int cam_proj_mdl_init(
         float dist_right = dist_up * aspect_ratio;
 
         //find the four rectangle points:
-        //vec3s r0 = cam_pos - cam_up * dist_up - right_dir * dist_right
-        //vec3s r1 = cam_pos - cam_up * dist_up + right_dir * dist_right
-        //vec3s r2 = cam_pos + cam_up * dist_up - right_dir * dist_right
-        //vec3s r3 = cam_pos + cam_up * dist_up + right_dir * dist_right
+        //vec3s r0 = plane_pos - cam_up * dist_up - right_dir * dist_right
+        //vec3s r1 = plane_pos - cam_up * dist_up + right_dir * dist_right
+        //vec3s r2 = plane_pos + cam_up * dist_up - right_dir * dist_right
+        //vec3s r3 = plane_pos + cam_up * dist_up + right_dir * dist_right
 
         vec3s rect[4];
         for (int i = 0; i < 4; i++) {
-                rect[i] = cam_pos;
+                rect[i] = plane_pos;
         }
         
         rect[0] = glms_vec3_add(rect[0], glms_vec3_scale(cam_up, -dist_up));
@@ -196,6 +196,27 @@ int cam_proj_mdl_init(
 
         ERR_ASSERT_RET((render_data->vertices != NULL), -2, "malloc failed");
         ERR_ASSERT_RET((render_data->indices != NULL), -2, "malloc failed");
+
+        //copy all points into renderdata
+        memcpy(render_data->vertices, cam_pos.raw, sizeof(vec3s));
+        memcpy(render_data->vertices + sizeof(vec3s), (float*)rect, sizeof(vec3s) * 4);
+
+        //make a line for each possible connection in the index buffer
+        {
+                int cnt = 0; //
+                for (unsigned int i = 0; i < 5; i++) {
+                        for (unsigned int j = i+1; j < 5; j++) {
+                                render_data->indices[2 * cnt] = i;
+                                render_data->indices[2 * cnt + 1] = j;
+                                cnt++;
+                        }
+                }
+        }
+
+        for (int i = 0; i < 4; i++) {
+                printf("%f %f %f\n", rect[i].x, rect[i].y, rect[i].z);
+        }
+
         
 
         bind_vao_and_vbo(&(render_data->vao), &(render_data->vbo), render_data->vertices, sizeof(float) * render_data->vertices_length, GL_STATIC_DRAW);
