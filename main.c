@@ -53,10 +53,22 @@ void opengl_settings_init()
 
 }
 
-
+/// @brief      This handles how switching between menu and screen happens using esc key. 
+///
+///             The only key callback you should use for this program. This should be set as the keyback
+///             only AFTER the gui and the glfw window have been initialized in order to overwrite 
+///             the callbacks they brought. 
+///             
+/// @param wnd the glfw window
+/// @param key the key that has done an action
+/// @param scancode hardware code for the key
+/// @param action what action the key has done
+/// @param mods bitfield indicating what modifiers were on the keys
 void key_callback_menu_switching(GLFWwindow *wnd, int key, int scancode, int action, int mods)
 {
+
         if (in_menu) {
+                //let the nuklear menu use their callbacks
                 glfwSetScrollCallback(wnd, nk_gflw3_scroll_callback);
                 glfwSetCharCallback(wnd, nk_glfw3_char_callback);
                 glfwSetMouseButtonCallback(wnd, nk_glfw3_mouse_button_callback);
@@ -65,6 +77,7 @@ void key_callback_menu_switching(GLFWwindow *wnd, int key, int scancode, int act
                 nk_glfw3_key_callback(wnd, key, scancode, action, mods);
 
         } else {
+                //give back mouse control
 	        glfwSetCursorPosCallback(wnd, mouse_callback);
 
                 //this can be changed to the normal callbacks
@@ -73,7 +86,8 @@ void key_callback_menu_switching(GLFWwindow *wnd, int key, int scancode, int act
                 glfwSetMouseButtonCallback(wnd, NULL);
 	}
 
-
+        //these are required because the only other alternative would be global variables.
+        // you cannot recieve these as a parameter because they mess up the callback function parameters
         static double last_x_pos, last_y_pos;
 
         // in addition to the nuklear callback, I will overwrite their esc functionality
