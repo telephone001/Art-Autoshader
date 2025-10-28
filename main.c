@@ -50,7 +50,7 @@ void opengl_settings_init()
 	glm_perspective(glm_rad(FOVY), (float)SCR_LENGTH / SCR_HEIGHT, 0.1f, 4000.0f, cam_projection);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(mat4), cam_projection);
         
-        glClearColor(0.8,0.8,0.8,1);
+        glClearColor(0.4,0.4,0.4,1);
 
 }
 
@@ -65,7 +65,12 @@ void opengl_settings_init()
 /// @param scancode hardware code for the key
 /// @param action what action the key has done
 /// @param mods bitfield indicating what modifiers were on the keys
-void key_callback_menu_switching(GLFWwindow *wnd, int key, int scancode, int action, int mods)
+void key_callback_menu_switching(
+        GLFWwindow *wnd, 
+        int key, 
+        int scancode, 
+        int action, 
+        int mods)
 {
 
         if (in_menu) {
@@ -85,6 +90,31 @@ void key_callback_menu_switching(GLFWwindow *wnd, int key, int scancode, int act
                 glfwSetScrollCallback(wnd, NULL);
                 glfwSetCharCallback(wnd, NULL);
                 glfwSetMouseButtonCallback(wnd, NULL);
+
+                //do some overwriting
+                if (key == GLFW_KEY_LEFT_SHIFT) {
+	        	switch (action) {
+	        	case GLFW_PRESS:
+	        		camera.speed = NORMAL_CAMERA_SPEED / 5;
+	        		break;
+                        
+	        	case GLFW_RELEASE:
+	        		camera.speed = NORMAL_CAMERA_SPEED;
+	        		break;
+	        	}
+	        }
+                
+	        if (key == GLFW_KEY_LEFT_CONTROL) {
+	        	switch (action) {
+	        	case GLFW_PRESS:
+	        		camera.speed = NORMAL_CAMERA_SPEED * 3;
+	        		break;
+                        
+	        	case GLFW_RELEASE:
+	        		camera.speed = NORMAL_CAMERA_SPEED;
+	        		break;
+	        	}
+	        }
 	}
 
         //these are required because the only other alternative would be global variables.
@@ -199,7 +229,7 @@ int cam_proj_mdl_init(
 
         //copy all points into renderdata
         memcpy(render_data->vertices, cam_pos.raw, sizeof(vec3s));
-        memcpy(render_data->vertices + sizeof(vec3s), (float*)rect, sizeof(vec3s) * 4);
+        memcpy(render_data->vertices + 3, (float*)rect, sizeof(vec3s) * 4);
 
         //make a line for each possible connection in the index buffer
         {
@@ -214,7 +244,7 @@ int cam_proj_mdl_init(
         }
 
         for (int i = 0; i < 4; i++) {
-                printf("%f %f %f\n", rect[i].x, rect[i].y, rect[i].z);
+                printf("%f %f %f\n", render_data->vertices[i], render_data->vertices[i + 1], render_data->vertices[i + 2]);
         }
 
         
@@ -278,7 +308,8 @@ int main()
         );
 	ERR_ASSERT_RET((shader_basic != 0), -1, "basic shader didn't work");
 
-        RenderData cam_proj_mdl = {0};
+        RenderData cam_proj_mdl[100] = {0};
+        int cnt = 0;
 
 
         while (!glfwWindowShouldClose(wnd)) {
@@ -295,16 +326,15 @@ int main()
 		mat4s cam_view = get_cam_view(camera);
 		glBufferSubData(GL_UNIFORM_BUFFER, sizeof(mat4s), sizeof(mat4s), (float*)&cam_view);
 		
-		
 
 
                 if (debug_thing == 1) {
-                        render_data_free(&cam_proj_mdl);
+                        render_data_free(&(cam_proj_mdl[cnt]));
                         int width, height;
                         glfwGetFramebufferSize(wnd, &width, &height);
 
                         cam_proj_mdl_init(
-                                &cam_proj_mdl, 
+                                &(cam_proj_mdl[cnt]), 
                                 shader_basic,
                                 (float)width / (float)height, 
                                 FOVY, 
@@ -313,10 +343,17 @@ int main()
                                 camera.up
                         );
                         debug_thing = 0;
+                        cnt++;
+
+                        if (cnt >= 100) {
+                                cnt = 0;
+                        }
                 }
 
-                if (cam_proj_mdl.vao) {
-                        cam_proj_mdl_render(&cam_proj_mdl);
+                for (int i = 0; i < 100; i++) {
+                        if (cam_proj_mdl[i].vao) {
+                                cam_proj_mdl_render(&(cam_proj_mdl[i]));
+                        }
                 }
 
 
