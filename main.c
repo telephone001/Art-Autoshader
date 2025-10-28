@@ -30,6 +30,7 @@ extern Camera camera; //handler for cameradata;
 extern int in_menu;   //menu status
 
 
+int debug_thing = 0; // TODO  REMOVE IN FINAL PRODUCT
 
 
 void opengl_settings_init()
@@ -103,12 +104,20 @@ void key_callback_menu_switching(GLFWwindow *wnd, int key, int scancode, int act
 
 	        in_menu = !in_menu;
 	}
+
+
+        //TODO REMOVE IN FINAL PRODUCT
+        if (key == GLFW_KEY_P && action == GLFW_PRESS) {
+                fprintf(stdout, "DEBUG!\n");
+                debug_thing = 1;
+        }
 }
 
 
 /// @brief will output the renderdata of a wireframe of a camera projection. Note that this renderdata allocates 
 ///             memory for its vertex buffer! make sure to free it!!!
 /// @param render_data the outputted render data for the wireframe of a camera projection
+/// @param shader the shader is a parameter because I don't want to create a new shader object for each model
 /// @param fovy the fovy of the camera.
 /// @param aspect_ratio the aspect ratio of the camera.
 /// @param cam_pos the 3d position of the camera
@@ -117,6 +126,7 @@ void key_callback_menu_switching(GLFWwindow *wnd, int key, int scancode, int act
 /// @return 0 on success negatives on error
 int cam_proj_mdl_init(
         RenderData *render_data, 
+        GLuint shader,
         float aspect_ratio, 
         float fovy, 
         vec3s cam_pos, 
@@ -162,15 +172,6 @@ int cam_proj_mdl_init(
         //we should have 5 points for our vertices. (the 4 above and the cam pos) 
         //Now we start filling in the renderdata
 
-        GLuint shader_basic = create_shader_program(
-                "shaders/basic.vert",
-                "shaders/basic.frag", 
-                NULL, 
-                NULL, 
-                NULL
-        );
-	ERR_ASSERT_RET((shader_basic != 0), -1, "basic shader didn't work");
-
         *render_data = (RenderData) {
 	        
                 // will be filled out below
@@ -190,7 +191,7 @@ int cam_proj_mdl_init(
 	        .num_textures = 0,    // nope.
 
 	        .primitive_type = GL_LINES,
-	        .shader = shader_basic,
+	        .shader = shader,
         };
 
         ERR_ASSERT_RET((render_data->vertices != NULL), -2, "malloc failed");
@@ -202,7 +203,7 @@ int cam_proj_mdl_init(
         ERR_ASSERT_RET((render_data->vao != 0), -3, "vao failed");
         ERR_ASSERT_RET((render_data->vbo != 0), -4, "vbo failed");
 
-        
+
         bind_ebo(&(render_data->ebo), render_data->indices, sizeof(unsigned int) * render_data->indices_length, GL_STATIC_DRAW);
 
         ERR_ASSERT_RET((render_data->vao != 0), -5, "ebo failed");
@@ -244,7 +245,20 @@ int main()
 
         // this is required AFTER nuklear_menu_init because it uses the callbacks
         glfwSetKeyCallback(wnd, key_callback_menu_switching);
-        
+
+
+
+        GLuint shader_basic = create_shader_program(
+                "shaders/basic.vert",
+                "shaders/basic.frag", 
+                NULL, 
+                NULL, 
+                NULL
+        );
+	ERR_ASSERT_RET((shader_basic != 0), -1, "basic shader didn't work");
+
+        RenderData cam_proj_mdl = {0};
+
 
         while (!glfwWindowShouldClose(wnd)) {
                 GL_PRINT_ERR();
@@ -261,6 +275,29 @@ int main()
 		glBufferSubData(GL_UNIFORM_BUFFER, sizeof(mat4s), sizeof(mat4s), (float*)&cam_view);
 		
 		
+
+
+                if (debug_thing == 1) {
+                        render_data_free(&cam_proj_mdl);
+                        int width, height;
+                        glfwGetFramebufferSize(wnd, &width, &height);
+
+                        cam_proj_mdl_init(
+                                &cam_proj_mdl, 
+                                shader_basic,
+                                (float)width / (float)height, 
+                                FOVY, 
+                                camera.pos, 
+                                glms_vec3_add(camera.pos, glms_vec3_scale(camera.front, 20)), 
+                                camera.up
+                        );
+                        debug_thing = 0;
+                }
+
+                if (cam_proj_mdl.vao) {
+                        cam_proj_mdl_render(&cam_proj_mdl);
+                }
+
 
 
 		if (in_menu) {

@@ -32,21 +32,31 @@ RenderData renderdata_init_clear()
 /// @param render_data the renderdata you wanna free
 void render_data_free(RenderData *render_data)
 {
-        free(render_data->indices);
-        render_data->indices = NULL;
+	if (render_data->indices != NULL) {
+		free(render_data->indices);
+        	render_data->indices = NULL;
+	}
 
-        free(render_data->vertices);
-        render_data = NULL;
+	if (render_data->vertices != NULL) {
+		free(render_data->vertices);
+        	render_data->vertices = NULL;
+	}
         
 
-        glDeleteVertexArrays(1, &render_data->vao);
-        render_data->vao = 0;
+	if (render_data->vao != 0) {
+		glDeleteVertexArrays(1, &render_data->vao);
+        	render_data->vao = 0;
+	}	
 
-        glDeleteBuffers(1, &render_data->vbo);
-        render_data->vbo = 0;
-
-        glDeleteBuffers(1, &render_data->ebo);
-        render_data->ebo = 0;
+	if (render_data->vbo != 0) {
+		glDeleteBuffers(1, &render_data->vbo);
+        	render_data->vbo = 0;
+	}
+        
+	if (render_data->ebo != 0) {
+		glDeleteBuffers(1, &render_data->ebo);
+        	render_data->ebo = 0;
+	}
 }
 
 /// @brief reads shader files and stores result in a string that is returned. 
