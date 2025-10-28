@@ -92,6 +92,117 @@ void key_callback_menu_switching(GLFWwindow *wnd, int key, int scancode, int act
 }
 
 
+typedef struct RenderData {
+	GLuint vao;
+	GLuint vbo;
+	GLuint ebo;
+
+	float *vertices;
+	unsigned int vertices_stride;
+	unsigned int vertices_length;
+
+	unsigned int *indices;
+	unsigned int indices_stride;
+	unsigned int indices_length;
+
+	GLuint *textures;
+	int num_textures;
+
+	GLenum polygon_mode;
+	GLuint shader;
+} RenderData;
+
+
+
+/// @brief will output the renderdata of a wireframe of a camera projection. Note that this renderdata allocates 
+///             memory for its vertex buffer! make sure to free it!!!
+/// @param render_data the outputted render data for the wireframe of a camera projection
+/// @param fovy 
+/// @param aspect_ratio 
+/// @param cam_pos the 3d position of the camera
+/// @param plane_pos the 3d position of the center of a perpendicular plane of the camera
+/// @param up the camera's up vector.
+/// @return 0 on success negatives on error
+int cam_proj_mdl_init(
+        RenderData *render_data, 
+        float aspect_ratio, 
+        float fovy, 
+        vec3s cam_pos, 
+        vec3s plane_pos, 
+        vec3s cam_up
+)
+{
+        //calculate the 3d positions of the corners of the plane the camera looks at (NOT NORMALIZED)
+        vec3s cam_front = glms_vec3_sub(plane_pos, cam_pos);
+
+        //nomalized vectors of right and forward
+        vec3s front_dir = glms_vec3_normalize(cam_forward);
+        vec3s right_dir = glms_vec3_crossn(cam_front, up);
+
+
+
+        //the dist between rectangle origin and rectangle top
+        float dist_up = sin(fovy/2) * glms_vec3_norm(cam_forward);
+
+        //the dist between rectangle origin and the rightost point of the rectangle
+        float dist_right = dist_up * aspect_ratio;
+
+        
+
+        //find the four rectangle points:
+        //vec3s r0 = cam_pos - front_dir * dist_up - right_dir * dist_right
+        //vec3s r1 = cam_pos - front_dir * dist_up + right_dir * dist_right
+        //vec3s r2 = cam_pos + front_dir * dist_up - right_dir * dist_right
+        //vec3s r3 = cam_pos + front_dir * dist_up + right_dir * dist_right
+
+        vec3s rect[4];
+
+        for (int i = 0; i < 4; i++) {
+                rect[i] = cam_pos;
+        }
+        
+
+        rect[0] = glms_vec3_add(rect[0], glms_vec3_scale(cam_up, -dist_up));
+        rect[1] = glms_vec3_add(rect[1], glms_vec3_scale(cam_up, -dist_up));
+        rect[2] = glms_vec3_add(rect[2], glms_vec3_scale(cam_up,  dist_up));
+        rect[3] = glms_vec3_add(rect[3], glms_vec3_scale(cam_up,  dist_up));
+
+        
+        rect[0] = glms_vec3_add(rect[0], glms_vec3_scale(cam_right, -dist_right));
+        rect[1] = glms_vec3_add(rect[1], glms_vec3_scale(cam_right,  dist_right));
+        rect[2] = glms_vec3_add(rect[2], glms_vec3_scale(cam_right, -dist_right));
+        rect[3] = glms_vec3_add(rect[3], glms_vec3_scale(cam_right,  dist_right));
+
+
+
+        //we should have 5 points for our vertices. (the 4 above and the cam pos) 
+        //Now we start filling in the renderdata
+        *render_data = (RenderData) {
+	        
+                // will be filled out
+                vao = 0, 
+	        vbo = 0, 
+	        ebo = 0, 
+
+	        vertices = malloc(sizeof(vec3s) * 5), //we only need 5 points
+	        vertices_stride = 3,                  //has to be 3 cuz of vec3
+	        vertices_length = 3 * 5,
+
+	        indices = malloc(sizeof(unsigned int) * 2 * 10), //10 because there are 10 ways to connect each of the 5 points
+	        indices_stride = 2, // 2 because we are rendering lines
+	        indices_length = 2 * 10,
+
+	        GLuint *textures = NULL; //no textures
+	        int num_textures = 0;    // nope.
+
+	        GLenum polygon_mode;    //
+	        GLuint shader;
+        }
+
+
+        //
+}
+
 int main() 
 {
         if (!glfwInit()) {
@@ -107,8 +218,8 @@ int main()
 
 
         GLuint plane = create_shader_program(
-                "shaders/plane.vert",
-                "shaders/plane.frag", 
+                "shaders/basic.vert",
+                "shaders/basic.frag", 
                 NULL, 
                 NULL, 
                 NULL
