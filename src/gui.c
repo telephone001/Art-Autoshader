@@ -26,7 +26,7 @@ int nuklear_menu_init(MenuOptions *gui_menu, GLFWwindow *wnd, const char *const 
 		.font_size = font_size,
 
 		// 0 for no image selected currently (will modify when choosing an image)
-		.img_path = {0}, //empty path
+		.img_path = {0}, //empty path Put to all zeros to ensure the last one is a null terminator
         	.img_tex = 0,	
         	.img_nk = {0},
 	};
@@ -66,7 +66,13 @@ static int state_main_render(const MenuOptions *const gui_menu)
 
 
 	nk_layout_row_static(gui_menu->ctx, 30, 200, 1);
-	nk_edit_string_zero_terminated(gui_menu->ctx, NK_EDIT_FIELD, gui_menu->img_path, GUI_IMG_PATH_BUFF_LEN, nk_filter_default);
+	nk_edit_string_zero_terminated(
+		gui_menu->ctx,
+		NK_EDIT_FIELD, 
+		gui_menu->img_path + GUI_IMG_PATH_START_IDX, 
+		GUI_IMG_FILENAME_MAX_LEN, //total size of the buffer you edit (includes null terminator) 
+		nk_filter_default
+	);
 
 
 	if (nk_button_label(gui_menu->ctx, "use image")) {
