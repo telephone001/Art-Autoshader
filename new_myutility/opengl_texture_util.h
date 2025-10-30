@@ -10,7 +10,7 @@
 
 struct RenderData skybox_buffer_setup();
 
-int load_2dtexture(GLuint *tex, char *const texture_path);
+int load_2dtexture(GLuint *tex, char *const texture_path, GLint img_storage_format);
 
 GLuint cubemap_create(const char *const *const tex_path_names, GLenum img_format);
 

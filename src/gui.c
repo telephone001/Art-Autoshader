@@ -77,19 +77,22 @@ static int state_main_render(MenuOptions *const gui_menu)
 
 	//if the textbox has been selected, remove the red error message in the gui
 	if (textbox_event & NK_EDIT_ACTIVE) {
+		// TODO ERROR HERE
 		img_err = 0;
 	}
 
 	// if use_img button pressed, set the menu image to the thing pointed to the textbox
 	if (nk_button_label(gui_menu->ctx, "use image")) {
-		nk_layout_row_static(gui_menu->ctx, 30, 32, 1);
 
+		//delete the texture first
 		if (gui_menu->img_tex != 0) {
 			glDeleteTextures(1, &gui_menu->img_tex);
+			gui_menu->img_tex = 0;
 			gui_menu->img_nk = (struct nk_image){0};
 			//you don't have to free anything in img_nk because it is not allocated
 		}
-		img_err = load_2dtexture(&gui_menu->img_tex, gui_menu->img_path);
+		
+		img_err = load_2dtexture(&gui_menu->img_tex, gui_menu->img_path, GL_RGB);
 	}
 
 
@@ -100,7 +103,7 @@ static int state_main_render(MenuOptions *const gui_menu)
 		nk_style_push_color(gui_menu->ctx, &gui_menu->ctx->style.text.color, nk_rgb(255, 0, 0));
 		nk_label(gui_menu->ctx, "image not found", NK_TEXT_LEFT);
 		nk_style_pop_color(gui_menu->ctx);
-	} else {
+	} else if (gui_menu->img_tex != 0) {
 		//otherwise, display the image
 		nk_layout_row_begin(gui_menu->ctx, NK_STATIC, 150, 1);
         	nk_layout_row_push(gui_menu->ctx, 150);
