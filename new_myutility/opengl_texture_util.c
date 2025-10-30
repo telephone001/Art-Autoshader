@@ -10,8 +10,7 @@
 /// @return negative values for error. 0 for success
 int load_2dtexture(GLuint *tex, char *const texture_path, GLint img_storage_format)
 {
-	//needed so images aren't upside down
-	stbi_set_flip_vertically_on_load(1);
+	//do not do stbi flip. The flipping will occur in the vertex shader or the vertex buffer
 
 	//check if texture path is valid
 	int width, height, nr_channels; 
@@ -50,7 +49,7 @@ int load_2dtexture(GLuint *tex, char *const texture_path, GLint img_storage_form
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	
+	//thank you olivarbo from learnopengl.com
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
 	glTexImage2D(GL_TEXTURE_2D, 0, 
