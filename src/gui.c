@@ -34,6 +34,7 @@ int nuklear_menu_init(MenuOptions *gui_menu, GLFWwindow *wnd, const char *const 
 
 	ERR_ASSERT_RET((gui_menu->ctx != 0), -1, "nk_glfw3_init didn't work");
 
+	strncpy(gui_menu->img_path, GUI_IMG_PATH_START, GUI_IMG_PATH_START_LEN);
 
         //set up font
         struct nk_font_atlas* atlas;
@@ -60,13 +61,13 @@ int nuklear_menu_init(MenuOptions *gui_menu, GLFWwindow *wnd, const char *const 
 
 // :::::::::::::::TODO:::::::::::::::::::
 
-static int state_main_render(const MenuOptions *const gui_menu)
+static int state_main_render(MenuOptions *const gui_menu)
 {
-	//TODO you are ignoring a lot of potential error messages here but this is for prototype
-
+	// you could move this into the gui_menu if you wanted to, but for testing a static var is easier
+	static int img_err = 0; //the error value of load_2dtexture
 
 	nk_layout_row_static(gui_menu->ctx, 30, 200, 1);
-	nk_edit_string_zero_terminated(
+	nk_flags textbox_event =  nk_edit_string_zero_terminated(
 		gui_menu->ctx,
 		NK_EDIT_FIELD, 
 		gui_menu->img_path + GUI_IMG_PATH_START_IDX, 
@@ -74,18 +75,41 @@ static int state_main_render(const MenuOptions *const gui_menu)
 		nk_filter_default
 	);
 
+	//if the textbox has been selected, remove the red error message in the gui
+	if (textbox_event & NK_EDIT_ACTIVE) {
+		img_err = 0;
+	}
 
+	// if use_img button pressed, set the menu image to the thing pointed to the textbox
 	if (nk_button_label(gui_menu->ctx, "use image")) {
 		nk_layout_row_static(gui_menu->ctx, 30, 32, 1);
+
+		if (gui_menu->img_tex != 0) {
+			glDeleteTextures(1, &gui_menu->img_tex);
+			gui_menu->img_nk = (struct nk_image){0};
+			//you don't have to free anything in img_nk because it is not allocated
+		}
+		img_err = load_2dtexture(&gui_menu->img_tex, gui_menu->img_path);
 	}
 
 
-	//allocate some menu area for the image then render the image of the wave
-	nk_layout_row_begin(gui_menu->ctx, NK_STATIC, 150, 1);
-        nk_layout_row_push(gui_menu->ctx, 150);
-	nk_image(gui_menu->ctx, (gui_menu->img_nk));
-
-
+	if (img_err < 0) {
+		// display an error message if texture not found
+		printf("fail\n");
+		nk_layout_row_static(gui_menu->ctx, 20, 80, 1);
+		nk_style_push_color(gui_menu->ctx, &gui_menu->ctx->style.text.color, nk_rgb(255, 0, 0));
+		nk_label(gui_menu->ctx, "image not found", NK_TEXT_LEFT);
+		nk_style_pop_color(gui_menu->ctx);
+	} else {
+		//otherwise, display the image
+		nk_layout_row_begin(gui_menu->ctx, NK_STATIC, 150, 1);
+        	nk_layout_row_push(gui_menu->ctx, 150);
+		gui_menu->img_nk = nk_image_id(gui_menu->img_tex);
+		nk_image(gui_menu->ctx, gui_menu->img_nk);
+	}
+	
+	printf("%d\n", gui_menu->img_tex);
+	printf("%s\n", gui_menu->img_path);
 
 	return 0;
 }

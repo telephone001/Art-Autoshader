@@ -2,6 +2,7 @@
 #define __GUI_H__
 
 #include "opengl_util.h"
+#include "opengl_texture_util.h"
 #include "general/debug.h"
 
 #include <GLFW/glfw3.h>
@@ -24,13 +25,13 @@
 
 #define GUI_IMG_FILENAME_MAX_LEN 255 //the max length of a filename Does not include null terminator
 
-#define GUI_IMG_PATH_START "input_image"        //the path relative to main.c where the code will look for the input files
+#define GUI_IMG_PATH_START "input_image/"        //the path relative to main.c where the code will look for the input files
 #define GUI_IMG_PATH_START_LEN sizeof(GUI_IMG_PATH_START) / sizeof(GUI_IMG_PATH_START[0])    //the size of the path start. Includes null terminator
 #define GUI_IMG_PATH_START_IDX GUI_IMG_PATH_START_LEN - 1 //start modifying at the null terminator
 
 // the buffer length used to store the path of the image
 // note that the gui_img_path_buff_len includes the null terminator in its length.
-#define GUI_IMG_PATH_BUFF_LEN   GUI_IMG_PATH_START_LEN + GUI_IMG_PATH_START_LEN 
+#define GUI_IMG_PATH_BUFF_LEN   GUI_IMG_PATH_START_LEN + GUI_IMG_FILENAME_MAX_LEN 
 
 
 

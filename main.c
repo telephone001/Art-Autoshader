@@ -1,11 +1,15 @@
 #include <stdio.h>
 
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_include.h>
+
 #include "src/gui.h"
 #include "general/debug.h"
 
 
 #include "opengl_util.h"
+#include "opengl_texture_util.h"
 #include "glfw_window.h"
 
 #include <cglm/mat4.h>
@@ -16,9 +20,6 @@
 
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
-
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_include.h>
 
 #define SCR_LENGTH 800
 #define SCR_HEIGHT 800

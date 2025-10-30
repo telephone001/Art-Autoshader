@@ -14,7 +14,7 @@ INCLUDE_ALL_DEP = $(addprefix -I./lib/,$(include)) -I./new_myutility
 libraries = -lglfw3 -lcglm
 
 #object files
-util_files = opengl_util glfw_window general/debug
+util_files = opengl_util glfw_window general/debug opengl_texture_util
 util_paths = $(addprefix $(myutil)/,$(util_files))
 util_paths_obj = $(addsuffix .o,$(util_paths))
 
