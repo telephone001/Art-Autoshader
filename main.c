@@ -229,7 +229,7 @@ int cam_proj_mdl_init(
         ERR_ASSERT_RET((render_data->vertices != NULL), -2, "malloc failed");
         ERR_ASSERT_RET((render_data->indices != NULL), -2, "malloc failed");
 
-        //copy all points into renderdata
+        //copy all points into renderdata. the first vec3 will be the cam pos
         memcpy(render_data->vertices, cam_pos.raw, sizeof(vec3s));
         memcpy(render_data->vertices + 3, (float*)rect, sizeof(vec3s) * 4);
 
@@ -265,6 +265,38 @@ int cam_proj_mdl_init(
         
 
         return 0;
+}
+
+
+int cam_proj_img_mdl_init(RenderData *cam_proj_img_mdl_data, RenderData *cam_proj_mdl_data, GLuint *img_tex) 
+{
+        *render_data = (RenderData) {
+	        
+                // will be filled out below
+                .vao = 0, 
+	        .vbo = 0, 
+	        .ebo = 0, 
+
+	        .vertices = malloc(sizeof(vec3s) * 4), //we only need 4 points. All from cam_mdl
+	        .vertices_stride = 3,                  //has to be 3 cuz of vec3
+	        .vertices_length = 3 * 4,
+
+	        .indices = malloc(sizeof(unsigned int) * 3 * 2), // 3 for each of the 2 triangles
+	        .indices_stride = 3, // 3 for triangle primitives
+	        .indices_length = 3 * 2,
+
+	        .textures = img_tex, //texture is equal to the current texture always
+	        .num_textures = 1,   
+
+	        .primitive_type = GL_LINES,
+	        .shader = shader,
+        };
+
+        cam_proj_mdl_data.vertices[];
+
+        memcpy(render_data->vertices + 3, (float*)rect, sizeof(vec3s) * 4);
+
+
 }
 
 /// @brief simple command to render a cam_proj model. 
