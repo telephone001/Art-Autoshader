@@ -15,10 +15,14 @@ libglfw3.dll.a or libglfw3.a
 
 cmake -G "Unix Makefiles" \
   -DBUILD_SHARED_LIBS=ON \
-  -DGLFW_USE_WAYLAND=OFF \
+  -DGLFW_BUILD_WAYLAND=OFF \
+  -DGLFW_BUILD_X11=ON \
   -DGLFW_BUILD_EXAMPLES=OFF \
   -DGLFW_BUILD_TESTS=OFF \
   -DGLFW_BUILD_DOCS=OFF \
+  .
+
+cmake -G "Unix Makefiles" -DBUILD_SHARED_LIBS=ON -DGLFW_USE_WAYLAND=OFF -DGLFW_BUILD_EXAMPLES=OFF -DGLFW_BUILD_TESTS=OFF -DGLFW_BUILD_DOCS=OFF 
 
 	3. in cmdline do make
 	4. go to src in glfw
