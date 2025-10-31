@@ -1,7 +1,27 @@
 Required:
 
-libcglm.a
-libglfw.a
-libglfw3.dll.a
+If you messed up cmake and make is showing an error: remove these 4 files using
+rm -rf CMakeCache.txt CMakeFiles/ cmake_install.cmake Makefile
 
+libcglm.dll.a or libcglm.a
+	1 go to cglm directory
+	2 in cmdline do cmake -G "Unix Makefiles" .
+	3 in cmdline do make 
+	
 
+libglfw3.dll.a or libglfw3.a
+	1 go to glfw directory
+	2 in cmdline do:
+
+cmake -G "Unix Makefiles" \
+  -DBUILD_SHARED_LIBS=ON \
+  -DGLFW_USE_WAYLAND=OFF \
+  -DGLFW_BUILD_EXAMPLES=OFF \
+  -DGLFW_BUILD_TESTS=OFF \
+  -DGLFW_BUILD_DOCS=OFF \
+
+	3. in cmdline do make
+	4. go to src in glfw
+	5. find libglfw3dll.a and put it in the lib directory
+	6. find glfw3.dll in lib/glfw/src
+	7. put it in the art_autoshader directory next to main.c

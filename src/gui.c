@@ -91,17 +91,15 @@ static int state_main_render(MenuOptions *const gui_menu)
 			gui_menu->img_nk = (struct nk_image){0};
 			//you don't have to free anything in img_nk because it is not allocated
 		}
-		
+
 		img_err = load_2dtexture(&gui_menu->img_tex, gui_menu->img_path, GL_RGB);
 	}
 
 
 	if (img_err < 0) {
 		// display an error message if texture not found
-		printf("fail\n");
 		nk_layout_row_static(gui_menu->ctx, 20, 80, 1);
 		nk_style_push_color(gui_menu->ctx, &gui_menu->ctx->style.text.color, nk_rgb(255, 0, 0));
-		nk_label(gui_menu->ctx, "image not found", NK_TEXT_LEFT);
 		nk_style_pop_color(gui_menu->ctx);
 	} else if (gui_menu->img_tex != 0) {
 		//otherwise, display the image
@@ -110,9 +108,6 @@ static int state_main_render(MenuOptions *const gui_menu)
 		gui_menu->img_nk = nk_image_id(gui_menu->img_tex);
 		nk_image(gui_menu->ctx, gui_menu->img_nk);
 	}
-	
-	printf("%d\n", gui_menu->img_tex);
-	printf("%s\n", gui_menu->img_path);
 
 	return 0;
 }

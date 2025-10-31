@@ -11,7 +11,7 @@ include := cglm/include glfw/include Nuklear stb glad/include
 INCLUDE_ALL_DEP = $(addprefix -I./lib/,$(include)) -I./new_myutility
 
 #for static library
-libraries = -lglfw3 -lcglm
+libraries = -lglfw3 -lcglm 
 
 #object files
 util_files = opengl_util glfw_window general/debug opengl_texture_util

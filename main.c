@@ -1,5 +1,8 @@
 #include <stdio.h>
 
+#include <glad/glad.h>
+
+#include <GLFW/glfw3.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_include.h>
@@ -18,14 +21,16 @@
 #include <cglm/struct.h>
 #include <cglm/io.h>
 
-#include <GLFW/glfw3.h>
-#include <glad/glad.h>
 
 #define SCR_LENGTH 800
 #define SCR_HEIGHT 800
 
+// camera parameters
 #define FOVY 45
+#define NEAR 0.1
+#define FAR 4000
 
+#define CAM_PROJ_MDL_DIST 20
 
 extern Camera camera; //handler for cameradata;
 extern int in_menu;   //menu status
@@ -33,12 +38,9 @@ extern int in_menu;   //menu status
 
 int debug_thing = 0; // TODO  REMOVE IN FINAL PRODUCT
 
-
+/// @brief 
 void opengl_settings_init()
 {
-        //enable transparency
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
@@ -48,9 +50,10 @@ void opengl_settings_init()
 
         //static camera data
 	mat4 cam_projection;
-	glm_perspective(glm_rad(FOVY), (float)SCR_LENGTH / SCR_HEIGHT, 0.1f, 4000.0f, cam_projection);
+	glm_perspective(glm_rad(FOVY), (float)SCR_LENGTH / SCR_HEIGHT, NEAR, FAR, cam_projection);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(mat4), cam_projection);
         
+        //set background color
         glClearColor(0.4,0.4,0.4,1);
 
 }
@@ -116,6 +119,10 @@ void key_callback_menu_switching(
 	        		break;
 	        	}
 	        }
+
+                if (key == GLFW_KEY_P && action == GLFW_PRESS) {
+                        debug_thing = 1;
+                }
 	}
 
         //these are required because the only other alternative would be global variables.
@@ -136,12 +143,6 @@ void key_callback_menu_switching(
 	        in_menu = !in_menu;
 	}
 
-
-        //TODO REMOVE IN FINAL PRODUCT
-        if (key == GLFW_KEY_P && action == GLFW_PRESS) {
-                fprintf(stdout, "DEBUG!\n");
-                debug_thing = 1;
-        }
 }
 
 
@@ -244,9 +245,6 @@ int cam_proj_mdl_init(
                 }
         }
 
-        for (int i = 0; i < 4; i++) {
-                printf("%f %f %f\n", render_data->vertices[i], render_data->vertices[i + 1], render_data->vertices[i + 2]);
-        }
 
         
 
@@ -293,7 +291,7 @@ int main()
 
         MenuOptions gui_menu;
         int err = nuklear_menu_init(&gui_menu, wnd, "fonts/american-typewriter.ttf", 22); 
-        printf("%d\n", err);
+        ERR_ASSERT_RET((err >= 0), -1, "nuklear window could not be created");
 
         // this is required AFTER nuklear_menu_init because it uses the callbacks
         glfwSetKeyCallback(wnd, key_callback_menu_switching);
@@ -307,7 +305,7 @@ int main()
                 NULL, 
                 NULL
         );
-	ERR_ASSERT_RET((shader_basic != 0), -1, "basic shader didn't work");
+	ERR_ASSERT_RET((shader_basic != 0), -2, "basic shader didn't work");
 
         RenderData cam_proj_mdl[100] = {0};
         int cnt = 0;
@@ -340,7 +338,7 @@ int main()
                                 (float)width / (float)height, 
                                 FOVY, 
                                 camera.pos, 
-                                glms_vec3_add(camera.pos, glms_vec3_scale(camera.front, 20)), 
+                                glms_vec3_add(camera.pos, glms_vec3_scale(camera.front, CAM_PROJ_MDL_DIST)), 
                                 camera.up
                         );
                         debug_thing = 0;
