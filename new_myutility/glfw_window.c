@@ -14,7 +14,7 @@ Camera camera = {
 	.speed = 	NORMAL_CAMERA_SPEED
 };
 
-int in_menu;
+int in_menu = 1;
 
 /**
  * @brief sets up a uniform buffer for the camera defined above

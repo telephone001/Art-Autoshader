@@ -82,6 +82,7 @@ void key_callback_menu_switching(
                 glfwSetScrollCallback(wnd, nk_gflw3_scroll_callback);
                 glfwSetCharCallback(wnd, nk_glfw3_char_callback);
                 glfwSetMouseButtonCallback(wnd, nk_glfw3_mouse_button_callback);
+                
 
                 //this will do the nuklear key callback
                 nk_glfw3_key_callback(wnd, key, scancode, action, mods);
@@ -270,6 +271,7 @@ int cam_proj_mdl_init(
 
 int cam_proj_img_mdl_init(RenderData *cam_proj_img_mdl_data, RenderData *cam_proj_mdl_data, GLuint *img_tex) 
 {
+        /* 
         *render_data = (RenderData) {
 	        
                 // will be filled out below
@@ -285,7 +287,7 @@ int cam_proj_img_mdl_init(RenderData *cam_proj_img_mdl_data, RenderData *cam_pro
 	        .indices_stride = 3, // 3 for triangle primitives
 	        .indices_length = 3 * 2,
 
-	        .textures = img_tex, //texture is equal to the current texture always
+	        .textures = , //you gotta alloc memory so that the menu image isn't the same as the projected image 
 	        .num_textures = 1,   
 
 	        .primitive_type = GL_LINES,
@@ -295,8 +297,8 @@ int cam_proj_img_mdl_init(RenderData *cam_proj_img_mdl_data, RenderData *cam_pro
         cam_proj_mdl_data.vertices[];
 
         memcpy(render_data->vertices + 3, (float*)rect, sizeof(vec3s) * 4);
-
-
+        */
+        return 0;
 }
 
 /// @brief simple command to render a cam_proj model. 
@@ -342,7 +344,8 @@ int main()
         RenderData cam_proj_mdl[100] = {0};
         int cnt = 0;
 
-
+        glfwSetInputMode(wnd, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        
         while (!glfwWindowShouldClose(wnd)) {
                 GL_PRINT_ERR();
                 static float last_frame;

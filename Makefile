@@ -11,11 +11,7 @@ include := cglm/include glfw/include Nuklear stb glad/include
 INCLUDE_ALL_DEP = $(addprefix -I./lib/,$(include)) -I./new_myutility
 
 #for static library
-ifeq ($(OS),Windows_NT)
-	libraries = -lglfw3 -lcglm 
-else
-	libraries = -lglfw3 -lcglm -ldl -lX11 -lpthread -lm
-endif
+libraries = -lglfw3 -lcglm 
 
 
 #object files
