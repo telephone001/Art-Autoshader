@@ -8,6 +8,7 @@
 #include <stb_include.h>
 
 #include "src/gui.h"
+#include "src/editor.h"
 #include "general/debug.h"
 
 
@@ -146,66 +147,61 @@ void key_callback_menu_switching(
 
 }
 
-
 /// @brief will output the renderdata of a wireframe of a camera projection. Note that this renderdata allocates 
 ///             memory for its vertex buffer! make sure to free it!!!
-/// @param render_data the outputted render data for the wireframe of a camera projection
+/// @param rdata the outputted render data for the wireframe of a camera projection
 /// @param shader the shader is a parameter because I don't want to create a new shader object for each model
 /// @param fovy the fovy of the camera.
-/// @param aspect_ratio the aspect ratio of the camera.
-/// @param cam_pos the 3d position of the camera
-/// @param plane_pos the 3d position of the center of a perpendicular plane of the camera
-/// @param up the camera's up vector. Has to be normalized
+/// @param aspect_ratio the aspect ratio of the camera width/height.
+/// @param cam the camera object that you want to make a model of
+/// @param plane_dist the distance between the camera and the plane looked at
 /// @return 0 on success negatives on error
 int cam_proj_mdl_init(
-        RenderData *render_data, 
+        RenderData *rdata, 
         GLuint shader,
         float aspect_ratio, 
         float fovy, 
-        vec3s cam_pos, 
-        vec3s plane_pos, 
-        vec3s cam_up
+        Camera cam,
+        float plane_dist
 )
 {
-        //calculate the 3d positions of the corners of the plane the camera looks at (NOT NORMALIZED)
-        vec3s cam_front = glms_vec3_sub(plane_pos, cam_pos);
 
-        //nomalized vectors of right and forward
-        vec3s right_dir = glms_vec3_crossn(cam_front, cam_up);
+        vec3s plane_pos = glms_vec3_add(cam.pos, glms_vec3_scale(cam.front, plane_dist));
+
 
         //the dist between rectangle origin and rectangle top
-        float dist_up = sin(fovy/2) * glms_vec3_norm(cam_front);
+        float dist_up = sin(fovy/2) * glms_vec3_norm(glms_vec3_sub(plane_pos, cam.pos));
 
         //the dist between rectangle origin and the rightost point of the rectangle
         float dist_right = dist_up * aspect_ratio;
 
         //find the four rectangle points:
-        //vec3s r0 = plane_pos - cam_up * dist_up - right_dir * dist_right
-        //vec3s r1 = plane_pos - cam_up * dist_up + right_dir * dist_right
-        //vec3s r2 = plane_pos + cam_up * dist_up - right_dir * dist_right
-        //vec3s r3 = plane_pos + cam_up * dist_up + right_dir * dist_right
+        //vec3s r0 = plane_pos - cam_up * dist_up - cam.right * dist_right
+        //vec3s r1 = plane_pos - cam_up * dist_up + cam.right * dist_right
+        //vec3s r2 = plane_pos + cam_up * dist_up - cam.right * dist_right
+        //vec3s r3 = plane_pos + cam_up * dist_up + cam.right * dist_right
 
         vec3s rect[4];
         for (int i = 0; i < 4; i++) {
                 rect[i] = plane_pos;
         }
         
-        rect[0] = glms_vec3_add(rect[0], glms_vec3_scale(cam_up, -dist_up));
-        rect[1] = glms_vec3_add(rect[1], glms_vec3_scale(cam_up, -dist_up));
-        rect[2] = glms_vec3_add(rect[2], glms_vec3_scale(cam_up,  dist_up));
-        rect[3] = glms_vec3_add(rect[3], glms_vec3_scale(cam_up,  dist_up));
+        rect[0] = glms_vec3_add(rect[0], glms_vec3_scale(cam.up, -dist_up));
+        rect[1] = glms_vec3_add(rect[1], glms_vec3_scale(cam.up, -dist_up));
+        rect[2] = glms_vec3_add(rect[2], glms_vec3_scale(cam.up,  dist_up));
+        rect[3] = glms_vec3_add(rect[3], glms_vec3_scale(cam.up,  dist_up));
 
-        rect[0] = glms_vec3_add(rect[0], glms_vec3_scale(right_dir, -dist_right));
-        rect[1] = glms_vec3_add(rect[1], glms_vec3_scale(right_dir,  dist_right));
-        rect[2] = glms_vec3_add(rect[2], glms_vec3_scale(right_dir, -dist_right));
-        rect[3] = glms_vec3_add(rect[3], glms_vec3_scale(right_dir,  dist_right));
+        rect[0] = glms_vec3_add(rect[0], glms_vec3_scale(cam.right, -dist_right));
+        rect[1] = glms_vec3_add(rect[1], glms_vec3_scale(cam.right,  dist_right));
+        rect[2] = glms_vec3_add(rect[2], glms_vec3_scale(cam.right, -dist_right));
+        rect[3] = glms_vec3_add(rect[3], glms_vec3_scale(cam.right,  dist_right));
 
 
 
         //we should have 5 points for our vertices. (the 4 above and the cam pos) 
         //Now we start filling in the renderdata
 
-        *render_data = (RenderData) {
+        *rdata = (RenderData) {
 	        
                 // will be filled out below
                 .vao = 0, 
@@ -227,20 +223,20 @@ int cam_proj_mdl_init(
 	        .shader = shader,
         };
 
-        ERR_ASSERT_RET((render_data->vertices != NULL), -2, "malloc failed");
-        ERR_ASSERT_RET((render_data->indices != NULL), -2, "malloc failed");
+        ERR_ASSERT_RET((rdata->vertices != NULL), -2, "malloc failed");
+        ERR_ASSERT_RET((rdata->indices != NULL), -2, "malloc failed");
 
         //copy all points into renderdata. the first vec3 will be the cam pos
-        memcpy(render_data->vertices, cam_pos.raw, sizeof(vec3s));
-        memcpy(render_data->vertices + 3, (float*)rect, sizeof(vec3s) * 4);
+        memcpy(rdata->vertices, cam.pos.raw, sizeof(vec3s));
+        memcpy(rdata->vertices + 3, (float*)rect, sizeof(vec3s) * 4);
 
         //make a line for each possible connection in the index buffer
         {
                 int cnt = 0; //
                 for (unsigned int i = 0; i < 5; i++) {
                         for (unsigned int j = i+1; j < 5; j++) {
-                                render_data->indices[2 * cnt] = i;
-                                render_data->indices[2 * cnt + 1] = j;
+                                rdata->indices[2 * cnt] = i;
+                                rdata->indices[2 * cnt + 1] = j;
                                 cnt++;
                         }
                 }
@@ -249,65 +245,180 @@ int cam_proj_mdl_init(
 
         
 
-        bind_vao_and_vbo(&(render_data->vao), &(render_data->vbo), render_data->vertices, sizeof(float) * render_data->vertices_length, GL_STATIC_DRAW);
+        bind_vao_and_vbo(&(rdata->vao), &(rdata->vbo), rdata->vertices, sizeof(float) * rdata->vertices_length, GL_STATIC_DRAW);
         
-        ERR_ASSERT_RET((render_data->vao != 0), -3, "vao failed");
-        ERR_ASSERT_RET((render_data->vbo != 0), -4, "vbo failed");
+        ERR_ASSERT_RET((rdata->vao != 0), -3, "vao failed");
+        ERR_ASSERT_RET((rdata->vbo != 0), -4, "vbo failed");
 
 
-        bind_ebo(&(render_data->ebo), render_data->indices, sizeof(unsigned int) * render_data->indices_length, GL_STATIC_DRAW);
+        bind_ebo(&(rdata->ebo), rdata->indices, sizeof(unsigned int) * rdata->indices_length, GL_STATIC_DRAW);
 
-        ERR_ASSERT_RET((render_data->vao != 0), -5, "ebo failed");
+        ERR_ASSERT_RET((rdata->vao != 0), -5, "ebo failed");
 
         
 	//position attribute
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, render_data->vertices_stride * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, rdata->vertices_stride * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
         
 
         return 0;
 }
 
-
-int cam_proj_img_mdl_init(RenderData *cam_proj_img_mdl_data, RenderData *cam_proj_mdl_data, GLuint *img_tex) 
+/// @brief initializes a cam plane model (plane that includes the image but not the heightmap)
+///            This is used inside the editor model to display the image on the plane
+/// @param cam_plane the struct we output to hold the cam plane
+/// @param cam_proj the struct we get the cam plane from. This is a cam_proj_mdl
+/// @param shader shader for the plane containing a texture
+/// @param img_tex the texture of the image
+/// @return 
+static int cam_plane_mdl_init(RenderData *cam_plane, RenderData *cam_proj, GLuint shader, GLuint img_tex) 
 {
-        /* 
-        *render_data = (RenderData) {
+        *cam_plane = (RenderData) {
 	        
                 // will be filled out below
                 .vao = 0, 
 	        .vbo = 0, 
 	        .ebo = 0, 
 
-	        .vertices = malloc(sizeof(vec3s) * 4), //we only need 4 points. All from cam_mdl
-	        .vertices_stride = 3,                  //has to be 3 cuz of vec3
-	        .vertices_length = 3 * 4,
+	        .vertices = malloc((sizeof(vec3) + sizeof(vec2)) * 4), //we only need 4 points. All from cam_mdl
+	        .vertices_stride = 5,                  //has to be 5 cuz of vec3 for pos and 2 for texcord
+	        .vertices_length = 5 * 4,
 
 	        .indices = malloc(sizeof(unsigned int) * 3 * 2), // 3 for each of the 2 triangles
 	        .indices_stride = 3, // 3 for triangle primitives
 	        .indices_length = 3 * 2,
 
-	        .textures = , //you gotta alloc memory so that the menu image isn't the same as the projected image 
+	        .textures = malloc(sizeof(GLuint)), //you gotta alloc memory so that the menu image isn't the same as the projected image 
 	        .num_textures = 1,   
 
 	        .primitive_type = GL_LINES,
 	        .shader = shader,
         };
 
-        cam_proj_mdl_data.vertices[];
 
-        memcpy(render_data->vertices + 3, (float*)rect, sizeof(vec3s) * 4);
-        */
+
+        //copy all plane points from cam_proj to the cam_plane vertices
+        for (int i = 0; i < cam_plane->vertices_length; i++) {
+                memcpy(
+                        cam_plane->vertices + i * cam_plane->vertices_stride,
+                        cam_proj->vertices + 3 + (3 * i),
+                        sizeof(vec3s)
+                );
+        }
+
+        //initialize texture coords for vertices
+        {
+                float tex_coords[] = {
+                        0,1,
+                        1,1,
+                        0,0,
+                        1,0,
+                }; 
+                for (int i = 0; i < cam_plane->vertices_length; i++) {
+                        memcpy(
+                                cam_plane->vertices + i * cam_plane->vertices_stride + 3,
+                                tex_coords + 2*i,
+                                sizeof(vec2s)
+                        );
+                }
+        }
+
+
+        //copy indices to renderdata
+        {
+                unsigned int indices[] = {
+                        0,1,2,
+                        0,2,3,
+                };
+
+                memcpy(
+                        cam_plane->indices,
+                        indices,
+                        sizeof(indices)
+                );
+        }
+
+        *cam_plane->textures = img_tex;
+
+
+        //now do regular opengl initializaiton
+        bind_vao_and_vbo(&(cam_plane->vao), &(cam_plane->vbo), cam_plane->vertices, sizeof(float) * cam_plane->vertices_length, GL_STATIC_DRAW);
+        
+        ERR_ASSERT_RET((cam_plane->vao != 0), -3, "vao failed");
+        ERR_ASSERT_RET((cam_plane->vbo != 0), -4, "vbo failed");
+
+
+        bind_ebo(&(cam_plane->ebo), cam_plane->indices, sizeof(unsigned int) * cam_plane->indices_length, GL_STATIC_DRAW);
+
+        ERR_ASSERT_RET((cam_plane->vao != 0), -5, "ebo failed");
+
+        
+	//position attribute
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, cam_plane->vertices_stride * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+        // texture attribute
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, cam_plane->vertices_stride * sizeof(float), (void*)(sizeof(vec2s)));
+	glEnableVertexAttribArray(1);
+
         return 0;
 }
 
-/// @brief simple command to render a cam_proj model. 
-/// @param cam_proj_render_data the renderdata of the thing you want to render (has to be initialized first)
-void cam_proj_mdl_render(RenderData *cam_proj_render_data)
+/// @brief renders a cam_plane model
+/// @param cam_plane_rdata the renderdata of the plane you want to render.
+void cam_plane_mdl_render(RenderData *cam_plane_rdata)
 {
-        glBindVertexArray(cam_proj_render_data->vao);
-	glUseProgram(cam_proj_render_data->shader);
-	glDrawElements(cam_proj_render_data->primitive_type, cam_proj_render_data->indices_length, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(cam_plane_rdata->vao);
+        glBindTexture(GL_TEXTURE_2D, cam_plane_rdata->textures[0]);
+
+	glUseProgram(cam_plane_rdata->shader);
+	glDrawElements(cam_plane_rdata->primitive_type, cam_plane_rdata->indices_length, GL_UNSIGNED_INT, 0);
+}
+
+/// @brief simple command to render a cam_proj model. 
+/// @param cam_proj_rdata the renderdata of the thing you want to render (has to be initialized first)
+void cam_proj_mdl_render(RenderData *cam_proj_rdata)
+{
+        glBindVertexArray(cam_proj_rdata->vao);
+	glUseProgram(cam_proj_rdata->shader);
+	glDrawElements(cam_proj_rdata->primitive_type, cam_proj_rdata->indices_length, GL_UNSIGNED_INT, 0);
+}
+
+int editor_mdl_init(Editor *editor, GLFWwindow *wnd, MenuOptions *gui_menu, GLuint shader_cam_proj, GLuint shader_cam_plane)
+{
+
+        int width, height;
+        glfwGetFramebufferSize(wnd, &width, &height);
+
+        int err;
+
+        err = cam_proj_mdl_init(
+                &editor->mdl_cam_plane,
+                shader_cam_proj,
+                (float)width/(float)height,
+                FOVY,
+                camera,
+                CAM_PROJ_MDL_DIST  
+        );
+
+        ERR_ASSERT_RET((err == 0), -1, "cam_proj_mdl_init failed");
+
+        err = cam_plane_mdl_init(
+                &editor->mdl_cam_plane,
+                &editor->mdl_cam_proj,
+                shader_cam_plane,
+                gui_menu->img_tex
+        );
+
+        ERR_ASSERT_RET((err == 0), -2, "cam_plane_mdl_init failed");
+
+
+        return 0;
+}
+
+int editor_render(Editor *editor)
+{
+        return 0;
 }
 
 int main() 
@@ -339,6 +450,7 @@ int main()
                 NULL, 
                 NULL
         );
+
 	ERR_ASSERT_RET((shader_basic != 0), -2, "basic shader didn't work");
 
         RenderData cam_proj_mdl[100] = {0};
@@ -372,9 +484,8 @@ int main()
                                 shader_basic,
                                 (float)width / (float)height, 
                                 FOVY, 
-                                camera.pos, 
-                                glms_vec3_add(camera.pos, glms_vec3_scale(camera.front, CAM_PROJ_MDL_DIST)), 
-                                camera.up
+                                camera, 
+                                CAM_PROJ_MDL_DIST
                         );
                         debug_thing = 0;
                         cnt++;
@@ -389,7 +500,6 @@ int main()
                                 cam_proj_mdl_render(&(cam_proj_mdl[i]));
                         }
                 }
-
 
 
 		if (in_menu) {

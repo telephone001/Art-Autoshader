@@ -19,10 +19,10 @@
 #define NORMAL_CAMERA_SPEED 	10.0f
 
 typedef struct Camera {
-	vec3s pos;
-	vec3s front;
-	vec3s up;
-	vec3s right;
+	vec3s pos;	
+	vec3s front;	//normalized vector for the direction the camera is looking at
+	vec3s up;	//normalized vector
+	vec3s right;	//normalized vector
 	float speed;
 } Camera;
 

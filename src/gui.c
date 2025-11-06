@@ -18,7 +18,7 @@ int nuklear_menu_init(MenuOptions *gui_menu, GLFWwindow *wnd, const char *const 
 	//initialize menu and also fill in some stuff
 	*gui_menu = (MenuOptions){
 		//THESE ARE CREATED LATER IN THIS FUNCTION
-		.ctx = 0, 
+		.ctx = NULL, 
 		.glfw = {0},
 		
 		.state = MENU_STATE_MAIN,   
@@ -29,7 +29,9 @@ int nuklear_menu_init(MenuOptions *gui_menu, GLFWwindow *wnd, const char *const 
 		.img_path = {0}, //empty path Put to all zeros to ensure the last one is a null terminator
         	.img_tex = 0,	
         	.img_nk = {0},
+		.img_copied = 0,
 	};
+	
 	gui_menu->ctx = nk_glfw3_init(&gui_menu->glfw, wnd, NK_GLFW3_INSTALL_CALLBACKS);
 
 	ERR_ASSERT_RET((gui_menu->ctx != 0), -1, "nk_glfw3_init didn't work");
