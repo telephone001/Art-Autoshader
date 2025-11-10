@@ -10,8 +10,13 @@ include := cglm/include glfw/include Nuklear stb glad/include
 #for including all the necessary paths.
 INCLUDE_ALL_DEP = $(addprefix -I./lib/,$(include)) -I./new_myutility
 
-#for static library
-libraries = -lglfw3 -lcglm 
+#platform specific make for static libraries
+ifeq ($(OS),Windows_NT)
+	libraries = -lglfw3 -lcglm
+else
+# Krishna can edit these flags if linux requires another library
+	libraries = -lglfw3WSL -ldl -lX11 -lpthread -lm 
+endif
 
 
 #object files
@@ -24,7 +29,6 @@ local_paths = $(addprefix src/,$(local_files))
 local_paths_obj = $(addsuffix .o,$(local_paths))
 
 CFLAGS = -Wall $(util_paths_obj) $(local_paths_obj) $(lib)/glad.o $(INCLUDE_ALL_DEP) -I$(myutil) -L$(lib) $(libraries) -Wno-missing-braces
-
 
 
 all: main.c $(util_paths_obj) $(local_paths_obj) $(lib)/glad.o
