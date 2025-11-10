@@ -31,7 +31,7 @@
 #define NEAR 0.1
 #define FAR 4000
 
-#define CAM_PROJ_MDL_DIST 20
+#define CAM_PROJ_MDL_DIST 10
 
 extern Camera camera; //handler for cameradata;
 extern int in_menu;   //menu status
@@ -314,10 +314,10 @@ static int cam_plane_mdl_init(RenderData *cam_plane, RenderData *cam_proj, GLuin
         //initialize texture coords for vertices
         {
                 float tex_coords[] = {
-                        0,1,
-                        1,1,
-                        0,0,
                         1,0,
+                        0,0,
+                        1,1,
+                        0,1,
                 }; 
                 for (int i = 0; i < cam_plane->vertices_length; i++) {
                         memcpy(
@@ -332,7 +332,7 @@ static int cam_plane_mdl_init(RenderData *cam_plane, RenderData *cam_proj, GLuin
         {
                 unsigned int indices[] = {
                         0,1,2,
-                        0,2,3,
+                        1,2,3,
                 };
 
                 memcpy(
@@ -361,7 +361,7 @@ static int cam_plane_mdl_init(RenderData *cam_plane, RenderData *cam_proj, GLuin
 	glEnableVertexAttribArray(0);
 
         // texture attribute
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, cam_plane->vertices_stride * sizeof(float), (void*)(sizeof(vec2s)));
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, cam_plane->vertices_stride * sizeof(float), (void*)(sizeof(vec3s)));
 	glEnableVertexAttribArray(1);
 
         return 0;
@@ -521,7 +521,9 @@ int main()
                                 cnt = 0;
                         }
                 }
-
+                
+                glEnable(GL_DEPTH_TEST);
+                glDepthFunc(GL_LESS);
                 for (int i = 0; i < 100; i++) {
                         if (editors[i].mdl_cam_proj.vao != 0 ) {
                                 editor_render(&(editors[i]));
