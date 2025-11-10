@@ -291,21 +291,26 @@ static int cam_plane_mdl_init(RenderData *cam_plane, RenderData *cam_proj, GLuin
 	        .textures = malloc(sizeof(GLuint)), //you gotta alloc memory so that the menu image isn't the same as the projected image 
 	        .num_textures = 1,   
 
-	        .primitive_type = GL_LINES,
+	        .primitive_type = GL_TRIANGLES,
 	        .shader = shader,
         };
 
 
-
         //copy all plane points from cam_proj to the cam_plane vertices
-        for (int i = 0; i < cam_plane->vertices_length; i++) {
+        for (int i = 0; i < 4; i++) {
                 memcpy(
                         cam_plane->vertices + i * cam_plane->vertices_stride,
-                        cam_proj->vertices + 3 + (3 * i),
+                        cam_proj->vertices + (cam_proj->vertices_stride * (i + 1)),
                         sizeof(vec3s)
                 );
         }
 
+
+        for (int i = 0; i < 4; i++) {
+                for (int j = 0; j < 3; j++) {
+                        cam_plane->vertices[i * 5 + j] = cam_proj->vertices[(i+1) * 3 + j];
+                }
+        }
         //initialize texture coords for vertices
         {
                 float tex_coords[] = {
@@ -323,7 +328,6 @@ static int cam_plane_mdl_init(RenderData *cam_plane, RenderData *cam_proj, GLuin
                 }
         }
 
-
         //copy indices to renderdata
         {
                 unsigned int indices[] = {
@@ -337,7 +341,6 @@ static int cam_plane_mdl_init(RenderData *cam_plane, RenderData *cam_proj, GLuin
                         sizeof(indices)
                 );
         }
-
         *cam_plane->textures = img_tex;
 
 
@@ -384,16 +387,23 @@ void cam_proj_mdl_render(RenderData *cam_proj_rdata)
 	glDrawElements(cam_proj_rdata->primitive_type, cam_proj_rdata->indices_length, GL_UNSIGNED_INT, 0);
 }
 
+/// @brief initializes an editor given a pointer to it
+/// @param editor the editor you want to initialize
+/// @param wnd the window (used to find the aspect ratio)
+/// @param gui_menu the gui_menu. Includes the texture and also we tell the menu that we took its texture
+/// @param shader_cam_proj the shader for the cam projection wireframe
+/// @param shader_cam_plane the shader for the plane containing the texture
+/// @return 0 if there are no errors. Negative values for errors
 int editor_mdl_init(Editor *editor, GLFWwindow *wnd, MenuOptions *gui_menu, GLuint shader_cam_proj, GLuint shader_cam_plane)
 {
-
+        
         int width, height;
         glfwGetFramebufferSize(wnd, &width, &height);
 
         int err;
 
         err = cam_proj_mdl_init(
-                &editor->mdl_cam_plane,
+                &editor->mdl_cam_proj,
                 shader_cam_proj,
                 (float)width/(float)height,
                 FOVY,
@@ -403,6 +413,9 @@ int editor_mdl_init(Editor *editor, GLFWwindow *wnd, MenuOptions *gui_menu, GLui
 
         ERR_ASSERT_RET((err == 0), -1, "cam_proj_mdl_init failed");
 
+        //no texture. No plane
+        ERR_ASSERT_RET((gui_menu->img_tex != 0), -2, "cam_plane_mdl_init failed (cannot make plane without texture)");
+
         err = cam_plane_mdl_init(
                 &editor->mdl_cam_plane,
                 &editor->mdl_cam_proj,
@@ -410,14 +423,30 @@ int editor_mdl_init(Editor *editor, GLFWwindow *wnd, MenuOptions *gui_menu, GLui
                 gui_menu->img_tex
         );
 
-        ERR_ASSERT_RET((err == 0), -2, "cam_plane_mdl_init failed");
+        ERR_ASSERT_RET((err == 0), -3, "cam_plane_mdl_init failed");
 
+        gui_menu->img_copied = 1;
 
         return 0;
 }
 
 int editor_render(Editor *editor)
 {
+        cam_proj_mdl_render(&(editor->mdl_cam_proj));
+
+        if (editor->mdl_cam_plane.vao != 0) {
+                cam_plane_mdl_render(&(editor->mdl_cam_plane));
+        }
+        return 0;
+}
+
+int editor_free(Editor *editor)
+{
+        if (editor != NULL) {
+                render_data_free(&(editor->mdl_cam_proj));
+                render_data_free(&(editor->mdl_cam_plane));
+        }
+
         return 0;
 }
 
@@ -443,17 +472,25 @@ int main()
 
 
 
-        GLuint shader_basic = create_shader_program(
-                "shaders/basic.vert",
-                "shaders/basic.frag", 
+        GLuint shader_cam_proj = create_shader_program(
+                "shaders/cam_proj.vert",
+                "shaders/cam_proj.frag", 
                 NULL, 
                 NULL, 
                 NULL
         );
 
-	ERR_ASSERT_RET((shader_basic != 0), -2, "basic shader didn't work");
+        GLuint shader_cam_plane = create_shader_program(
+                "shaders/cam_plane.vert",
+                "shaders/cam_plane.frag", 
+                NULL, 
+                NULL, 
+                NULL
+        );
 
-        RenderData cam_proj_mdl[100] = {0};
+	ERR_ASSERT_RET((shader_cam_proj != 0), -2, "cam proj shader didn't work");
+
+        Editor editors[100] = {0};
         int cnt = 0;
 
         glfwSetInputMode(wnd, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
@@ -475,18 +512,8 @@ int main()
 
 
                 if (debug_thing == 1) {
-                        render_data_free(&(cam_proj_mdl[cnt]));
-                        int width, height;
-                        glfwGetFramebufferSize(wnd, &width, &height);
-
-                        cam_proj_mdl_init(
-                                &(cam_proj_mdl[cnt]), 
-                                shader_basic,
-                                (float)width / (float)height, 
-                                FOVY, 
-                                camera, 
-                                CAM_PROJ_MDL_DIST
-                        );
+                        editor_free(&(editors[cnt]));
+                        editor_mdl_init(&(editors[cnt]), wnd, &gui_menu, shader_cam_proj, shader_cam_plane);
                         debug_thing = 0;
                         cnt++;
 
@@ -496,8 +523,8 @@ int main()
                 }
 
                 for (int i = 0; i < 100; i++) {
-                        if (cam_proj_mdl[i].vao) {
-                                cam_proj_mdl_render(&(cam_proj_mdl[i]));
+                        if (editors[i].mdl_cam_proj.vao != 0 ) {
+                                editor_render(&(editors[i]));
                         }
                 }
 

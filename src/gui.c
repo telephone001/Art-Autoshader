@@ -86,9 +86,12 @@ static int state_main_render(MenuOptions *const gui_menu)
 	// if use_img button pressed, set the menu image to the thing pointed to the textbox
 	if (nk_button_label(gui_menu->ctx, "use image")) {
 
-		//delete the texture first
+		//delete the texture first but only if someone else isnt using it
 		if (gui_menu->img_tex != 0) {
-			glDeleteTextures(1, &gui_menu->img_tex);
+			if (gui_menu->img_copied == 0) {
+				glDeleteTextures(1, &gui_menu->img_tex);
+			}
+			
 			gui_menu->img_tex = 0;
 			gui_menu->img_nk = (struct nk_image){0};
 			//you don't have to free anything in img_nk because it is not allocated

@@ -23,6 +23,7 @@ RenderData renderdata_init_clear()
 	.primitive_type  = GL_TRIANGLES,
 	.shader 	 = 0,
 	.textures	 = NULL,
+	.num_textures    = 0,
 	};
 	
 	return data;
@@ -40,6 +41,12 @@ void render_data_free(RenderData *render_data)
 	if (render_data->vertices != NULL) {
 		free(render_data->vertices);
         	render_data->vertices = NULL;
+	}
+
+	if (render_data->textures != NULL) {
+		glDeleteTextures(render_data->num_textures, render_data->textures);
+		free(render_data->textures);
+        	render_data->textures = NULL;
 	}
         
 
