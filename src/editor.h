@@ -2,16 +2,115 @@
 #ifndef __EDITOR_H__
 #define __EDITOR_H__
 
+#include "gui.h"
 
+#include "general/debug.h"
+
+#include "glfw_window.h"
 #include "opengl_util.h"
+
+
+
+#define CAM_PROJ_MDL_DIST 10
 
 
 typedef struct Editor {
         RenderData mdl_cam_plane;       //the model for the camera plane
         RenderData mdl_cam_proj;        //the model for the camera projection
+
+        int hmap_l;       //Length corresponds to the x coordinate
+        int hmap_w;       //Width  correspodns to the z coordinate
+        RenderData hmap_rd;       //includes the heightmap as vertices
+
+        Camera cam; //the camera object associated with the editor
+
 } Editor;
 
 
+/// @brief will output the renderdata of a wireframe of a camera projection. Note that this renderdata allocates 
+///             memory for its vertex buffer! make sure to free it!!!
+/// @param rdata the outputted render data for the wireframe of a camera projection
+/// @param shader the shader is a parameter because I don't want to create a new shader object for each model
+/// @param fovy the fovy of the camera.
+/// @param aspect_ratio the aspect ratio of the camera width/height.
+/// @param cam the camera object that you want to make a model of
+/// @param plane_dist the distance between the camera and the plane looked at
+/// @return 0 on success negatives on error
+int cam_proj_mdl_init(
+        RenderData *rdata, 
+        GLuint shader,
+        float aspect_ratio, 
+        float fovy, 
+        Camera cam,
+        float plane_dist
+);
+
+/// @brief renders a cam_plane model
+/// @param cam_plane_rdata the renderdata of the plane you want to render.
+void cam_plane_mdl_render(RenderData *cam_plane_rdata);
+
+/// @brief simple command to render a cam_proj model. 
+/// @param cam_proj_rdata the renderdata of the thing you want to render (has to be initialized first)
+void cam_proj_mdl_render(RenderData *cam_proj_rdata);
+
+
+/// @brief Will allocate and calculate the indices matrix and the size of it for a heightmap of points
+///             Modified from an old project (thanks John)
+/// @param r_heightmap_indices returned heightmap indices
+/// @param r_indices_length returned indices length
+/// @param grid_length the length of the grid (how many points are on each row)
+/// @param grid_width the width of the grid (how many points are on each column) 
+/// @return 0 for success. negative value for error
+int heightmap_indices_create(
+        unsigned int *r_heightmap_indices,
+        unsigned int *r_indices_length, 
+        const int grid_length,
+        const int grid_width
+);
+
+/// @brief initializes the heightmap, mallocing a vertices and indices array. The vertices will be all 0s
+///             and the indices will be filled out
+/// @param hmap_rd the returned heightmap
+/// @param shader  shader for the heightmap (tesselator)
+/// @param hmap_l heightmap length (how many array members are in each row)
+/// @param hmap_w heightmap width (how many array members are in each column)
+/// @return 0 for success. negative values for error
+int heightmap_mdl_init(
+        RenderData *hmap_rd,
+        GLuint shader,
+        int hmap_l,
+        int hmap_w
+);
+
+/// @brief initializes an editor given a pointer to it
+/// @param editor the editor you want to initialize
+/// @param wnd the window (used to find the aspect ratio)
+/// @param gui_menu pointer to the gui_menu. Includes the texture and also we tell the menu that we took its texture
+/// @param shader_cam_proj the shader for the cam projection wireframe
+/// @param shader_cam_plane the shader for the plane containing the texture
+/// @param shader_hmap the shader for rendering heightmap (tesselation)
+/// @param hmap_idx_l for heightmap, how many array elements are in each row (x coordinate)
+/// @param hmap_idx_w for heightmap, how many array elements are in each column (z coordinate)
+/// @return 0 if there are no errors. Negative values for errors
+int editor_init(
+        Editor *editor, 
+        GLFWwindow *wnd, 
+        MenuOptions *gui_menu, 
+        GLuint shader_cam_proj, 
+        GLuint shader_cam_plane,
+        GLuint shader_hmap,
+        int hmap_idx_l,
+        int hmap_idx_w
+);
+
+/// @brief renders the editor object
+/// @param editor 
+/// @return 
+int editor_render(Editor *editor);
+
+/// @brief frees the data of an editor
+/// @param editor the editor you want to free
+void editor_free(Editor *editor);
 
 
 

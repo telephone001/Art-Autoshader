@@ -18,6 +18,11 @@
 #define MOUSE_SENSITIVITY   	0.15f
 #define NORMAL_CAMERA_SPEED 	10.0f
 
+// camera parameters
+#define FOVY 45
+#define NEAR 0.1
+#define FAR 4000
+
 typedef struct Camera {
 	vec3s pos;	
 	vec3s front;	//normalized vector for the direction the camera is looking at

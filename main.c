@@ -26,13 +26,6 @@
 #define SCR_LENGTH 800
 #define SCR_HEIGHT 800
 
-// camera parameters
-#define FOVY 45
-#define NEAR 0.1
-#define FAR 4000
-
-#define CAM_PROJ_MDL_DIST 10
-
 extern Camera camera; //handler for cameradata;
 extern int in_menu;   //menu status
 
@@ -185,7 +178,13 @@ int main()
                 NULL
         );
 
-	ERR_ASSERT_RET((shader_cam_proj != 0), -2, "cam proj shader didn't work");
+        GLuint shader_hmap = create_shader_program(
+                "shaders/hmap.vert",
+                "shaders/hmap.frag", 
+                NULL, 
+                "shaders/hmap.tesc", 
+                "shaders/hmap.tese"
+        );	
 
         Editor editors[100] = {0};
         int cnt = 0;
@@ -209,8 +208,23 @@ int main()
 
 
                 if (debug_thing == 1) {
+
+                        // TODO EDITOR DOESNT DO REFERENC COUNTING FOR ALLOCATED TEXTURES
                         editor_free(&(editors[cnt]));
-                        editor_mdl_init(&(editors[cnt]), wnd, &gui_menu, shader_cam_proj, shader_cam_plane);
+                        int err = editor_init(
+                                &(editors[cnt]), 
+                                wnd, 
+                                &gui_menu, 
+                                shader_cam_proj, 
+                                shader_cam_plane,
+                                shader_hmap,
+                                100, // PLACHOLDER
+                                100  // PLACHOLDER
+                        );
+
+                        if (err < 0) {
+                                editor_free(&(editors[cnt]));
+                        }
                         debug_thing = 0;
                         cnt++;
 
