@@ -224,26 +224,6 @@ static int cam_plane_mdl_init(RenderData *cam_plane, RenderData *cam_proj, GLuin
         return 0;
 }
 
-/// @brief renders a cam_plane model
-/// @param cam_plane_rdata the renderdata of the plane you want to render.
-void cam_plane_mdl_render(RenderData *cam_plane_rdata)
-{
-        glBindVertexArray(cam_plane_rdata->vao);
-        glBindTexture(GL_TEXTURE_2D, cam_plane_rdata->textures[0]);
-
-	glUseProgram(cam_plane_rdata->shader);
-	glDrawElements(cam_plane_rdata->primitive_type, cam_plane_rdata->indices_length, GL_UNSIGNED_INT, 0);
-}
-
-/// @brief simple command to render a cam_proj model. 
-/// @param cam_proj_rdata the renderdata of the thing you want to render (has to be initialized first)
-void cam_proj_mdl_render(RenderData *cam_proj_rdata)
-{
-        glBindVertexArray(cam_proj_rdata->vao);
-	glUseProgram(cam_proj_rdata->shader);
-	glDrawElements(cam_proj_rdata->primitive_type, cam_proj_rdata->indices_length, GL_UNSIGNED_INT, 0);
-}
-
 /// @brief Will allocate and calculate the indices matrix and the size of it for a heightmap of points
 ///             Modified from an old project (thanks John)
 /// @param r_heightmap_indices returned heightmap indices
@@ -441,6 +421,38 @@ int editor_init(
         return 0;
 }
 
+/// @brief renders a cam_plane model
+/// @param cam_plane_rdata the renderdata of the plane you want to render.
+void cam_plane_mdl_render(RenderData *cam_plane_rdata)
+{
+        glBindVertexArray(cam_plane_rdata->vao);
+        glBindTexture(GL_TEXTURE_2D, cam_plane_rdata->textures[0]);
+
+	glUseProgram(cam_plane_rdata->shader);
+	glDrawElements(cam_plane_rdata->primitive_type, cam_plane_rdata->indices_length, GL_UNSIGNED_INT, 0);
+}
+
+/// @brief simple command to render a cam_proj model. 
+/// @param cam_proj_rdata the renderdata of the thing you want to render (has to be initialized first)
+void cam_proj_mdl_render(RenderData *cam_proj_rdata)
+{
+        glBindVertexArray(cam_proj_rdata->vao);
+	glUseProgram(cam_proj_rdata->shader);
+	glDrawElements(cam_proj_rdata->primitive_type, cam_proj_rdata->indices_length, GL_UNSIGNED_INT, 0);
+}
+
+/// @brief renders heightmap
+/// @param hmap_rdata the heightmap you want to render
+/// @param hmap_row_len the length of each row in the heightmap
+void hmap_render(RenderData *hmap_rdata, int hmap_row_len)
+{
+        glBindVertexArray(hmap_rdata->vao);
+	glUseProgram(hmap_rdata->shader);
+        glUniform1i(glGetUniformLocation(hmap_rdata->shader, "hmap_row_len"), hmap_row_len);
+	glDrawElements(hmap_rdata->primitive_type, hmap_rdata->indices_length, GL_UNSIGNED_INT, 0);
+}
+
+
 /// @brief renders the editor object
 /// @param editor 
 /// @return 
@@ -448,6 +460,8 @@ int editor_render(Editor *editor)
 {
         cam_proj_mdl_render(&(editor->mdl_cam_proj));
         cam_plane_mdl_render(&(editor->mdl_cam_plane));
+        hmap_render(&(editor->hmap_rd), editor->hmap_l);
+
         return 0;
 }
 

@@ -182,8 +182,8 @@ int main()
                 "shaders/hmap.vert",
                 "shaders/hmap.frag", 
                 NULL, 
-                "shaders/hmap.tesc", 
-                "shaders/hmap.tese"
+                NULL, 
+                NULL
         );	
 
         Editor editors[100] = {0};
@@ -209,7 +209,7 @@ int main()
 
                 if (debug_thing == 1) {
 
-                        // TODO EDITOR DOESNT DO REFERENC COUNTING FOR ALLOCATED TEXTURES
+                        // TODO EDITOR DOESNT DO REFERENCE COUNTING FOR ALLOCATED TEXTURES
                         editor_free(&(editors[cnt]));
                         int err = editor_init(
                                 &(editors[cnt]), 
