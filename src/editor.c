@@ -121,6 +121,7 @@ int cam_proj_mdl_init(
         return 0;
 }
 
+
 /// @brief initializes a cam plane model (plane that includes the image but not the heightmap)
 ///            This is used inside the editor model to display the image on the plane
 /// @param cam_plane the struct we output to hold the cam plane
@@ -224,15 +225,16 @@ static int cam_plane_mdl_init(RenderData *cam_plane, RenderData *cam_proj, GLuin
         return 0;
 }
 
+
 /// @brief Will allocate and calculate the indices matrix and the size of it for a heightmap of points
 ///             Modified from an old project (thanks John)
-/// @param r_heightmap_indices returned heightmap indices
-/// @param r_indices_length returned indices length
+/// @param r_heightmap_indices the address of the pointer to the indices array (returned thing)
+/// @param r_indices_length returned indices length 
 /// @param grid_length the length of the grid (how many points are on each row)
 /// @param grid_width the width of the grid (how many points are on each column) 
 /// @return 0 for success. negative value for error
-int heightmap_indices_create(
-        unsigned int *r_heightmap_indices,
+static int heightmap_indices_create(
+        unsigned int **r_heightmap_indices,
         unsigned int *r_indices_length, 
         const int grid_length,
         const int grid_width
@@ -272,23 +274,24 @@ int heightmap_indices_create(
 	}
 
 	*r_indices_length = indices_length;
-	r_heightmap_indices = indices;
+	*r_heightmap_indices = indices;
 
         return 0;
 }
+
 
 /// @brief initializes the heightmap, mallocing a vertices and indices array. The vertices will be all 0s
 ///             and the indices will be filled out
 /// @param hmap_rd the returned heightmap
 /// @param shader  shader for the heightmap (tesselator)
-/// @param hmap_l heightmap length (how many array members are in each row)
-/// @param hmap_w heightmap width (how many array members are in each column)
+/// @param hmap_w heightmap length (how many array members are in each row)
+/// @param hmap_l heightmap width (how many array members are in each column)
 /// @return 0 for success. negative values for error
 int heightmap_mdl_init(
         RenderData *hmap_rd,
         GLuint shader,
-        int hmap_l,
-        int hmap_w
+        int hmap_w,
+        int hmap_l
 )
 {
         int err = 0;
@@ -318,21 +321,26 @@ int heightmap_mdl_init(
 
         memset(hmap_rd->vertices, 0, hmap_rd->vertices_length * sizeof(float));
 
-        err = heightmap_indices_create(hmap_rd->indices, &(hmap_rd->indices_length), hmap_l, hmap_w);
+        //THIS IS FOR DEBUGGING
+        for (int i = 0; i < hmap_l * hmap_w; i++) {
+                srand((unsigned int)(glfwGetTime() * 1000000.0));
+                hmap_rd->vertices[i] = (rand() % 20 - 10) / 10.0;
+        }
+
+        err = heightmap_indices_create(&(hmap_rd->indices), &(hmap_rd->indices_length), hmap_l, hmap_w);
         ERR_ASSERT_RET((err >= 0), -1, "could not create heightmap idices");
 
 
-        //do opengl rendering stuff
+        //do opengl rendering stuff (fill out vao and vbo and ebo)
         bind_vao_and_vbo(
                 &(hmap_rd->vao),
                 &(hmap_rd->vbo), 
                 hmap_rd->vertices, 
                 sizeof(float) * hmap_rd->vertices_length, 
-                GL_DYNAMIC_DRAW
+                GL_STATIC_DRAW
         );
         ERR_ASSERT_RET((hmap_rd->vao != 0), -3, "vao failed");
         ERR_ASSERT_RET((hmap_rd->vbo != 0), -4, "vbo failed");
-
 
         bind_ebo(
                 &(hmap_rd->ebo), 
@@ -342,14 +350,15 @@ int heightmap_mdl_init(
         );
         ERR_ASSERT_RET((hmap_rd->vao != 0), -5, "ebo failed");
 
-        
-	//position attribute
+        //position attribute
 	glVertexAttribPointer(0, 1, GL_FLOAT, GL_FALSE, hmap_rd->vertices_stride * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
+        
 
         return 0;
 
 }
+
 
 /// @brief initializes an editor given a pointer to it
 /// @param editor the editor you want to initialize
@@ -358,8 +367,8 @@ int heightmap_mdl_init(
 /// @param shader_cam_proj the shader for the cam projection wireframe
 /// @param shader_cam_plane the shader for the plane containing the texture
 /// @param shader_hmap the shader for rendering heightmap (tesselation)
-/// @param hmap_idx_l for heightmap, how many array elements are in each row (x coordinate)
-/// @param hmap_idx_w for heightmap, how many array elements are in each column (z coordinate)
+/// @param hmap_idx_w for heightmap, how many array elements are in each row (x coordinate)
+/// @param hmap_idx_l for heightmap, how many array elements are in each column (z coordinate)
 /// @return 0 if there are no errors. Negative values for errors
 int editor_init(
         Editor *editor, 
@@ -421,6 +430,7 @@ int editor_init(
         return 0;
 }
 
+
 /// @brief renders a cam_plane model
 /// @param cam_plane_rdata the renderdata of the plane you want to render.
 void cam_plane_mdl_render(RenderData *cam_plane_rdata)
@@ -432,6 +442,7 @@ void cam_plane_mdl_render(RenderData *cam_plane_rdata)
 	glDrawElements(cam_plane_rdata->primitive_type, cam_plane_rdata->indices_length, GL_UNSIGNED_INT, 0);
 }
 
+
 /// @brief simple command to render a cam_proj model. 
 /// @param cam_proj_rdata the renderdata of the thing you want to render (has to be initialized first)
 void cam_proj_mdl_render(RenderData *cam_proj_rdata)
@@ -441,15 +452,19 @@ void cam_proj_mdl_render(RenderData *cam_proj_rdata)
 	glDrawElements(cam_proj_rdata->primitive_type, cam_proj_rdata->indices_length, GL_UNSIGNED_INT, 0);
 }
 
+
 /// @brief renders heightmap
 /// @param hmap_rdata the heightmap you want to render
 /// @param hmap_row_len the length of each row in the heightmap
 void hmap_render(RenderData *hmap_rdata, int hmap_row_len)
 {
+
         glBindVertexArray(hmap_rdata->vao);
 	glUseProgram(hmap_rdata->shader);
         glUniform1i(glGetUniformLocation(hmap_rdata->shader, "hmap_row_len"), hmap_row_len);
+
 	glDrawElements(hmap_rdata->primitive_type, hmap_rdata->indices_length, GL_UNSIGNED_INT, 0);
+
 }
 
 
@@ -464,6 +479,7 @@ int editor_render(Editor *editor)
 
         return 0;
 }
+
 
 /// @brief frees the data of an editor
 /// @param editor the editor you want to free

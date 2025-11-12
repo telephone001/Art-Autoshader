@@ -222,6 +222,7 @@ int main()
                                 100  // PLACHOLDER
                         );
 
+
                         if (err < 0) {
                                 editor_free(&(editors[cnt]));
                         }

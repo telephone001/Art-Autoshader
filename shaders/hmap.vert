@@ -17,5 +17,5 @@ void main()
 
         height = a_height;
 
-        gl_Position = projection * view * vec4(vec3(x , height, z), 1.0);
+        gl_Position = projection * view * vec4(vec3(x , a_height, z), 1.0);
 }

@@ -18,8 +18,8 @@ typedef struct Editor {
         RenderData mdl_cam_plane;       //the model for the camera plane
         RenderData mdl_cam_proj;        //the model for the camera projection
 
-        int hmap_l;       //Length corresponds to the x coordinate
-        int hmap_w;       //Width  correspodns to the z coordinate
+        int hmap_w;       //Width corresponds to the x coordinate
+        int hmap_l;       //Length  correspodns to the z coordinate
         RenderData hmap_rd;       //includes the heightmap as vertices
 
         Camera cam; //the camera object associated with the editor
@@ -54,26 +54,12 @@ void cam_plane_mdl_render(RenderData *cam_plane_rdata);
 void cam_proj_mdl_render(RenderData *cam_proj_rdata);
 
 
-/// @brief Will allocate and calculate the indices matrix and the size of it for a heightmap of points
-///             Modified from an old project (thanks John)
-/// @param r_heightmap_indices returned heightmap indices
-/// @param r_indices_length returned indices length
-/// @param grid_length the length of the grid (how many points are on each row)
-/// @param grid_width the width of the grid (how many points are on each column) 
-/// @return 0 for success. negative value for error
-int heightmap_indices_create(
-        unsigned int *r_heightmap_indices,
-        unsigned int *r_indices_length, 
-        const int grid_length,
-        const int grid_width
-);
-
 /// @brief initializes the heightmap, mallocing a vertices and indices array. The vertices will be all 0s
 ///             and the indices will be filled out
 /// @param hmap_rd the returned heightmap
 /// @param shader  shader for the heightmap (tesselator)
-/// @param hmap_l heightmap length (how many array members are in each row)
-/// @param hmap_w heightmap width (how many array members are in each column)
+/// @param hmap_w heightmap length (how many array members are in each row)
+/// @param hmap_l heightmap width (how many array members are in each column)
 /// @return 0 for success. negative values for error
 int heightmap_mdl_init(
         RenderData *hmap_rd,
@@ -89,8 +75,8 @@ int heightmap_mdl_init(
 /// @param shader_cam_proj the shader for the cam projection wireframe
 /// @param shader_cam_plane the shader for the plane containing the texture
 /// @param shader_hmap the shader for rendering heightmap (tesselation)
-/// @param hmap_idx_l for heightmap, how many array elements are in each row (x coordinate)
-/// @param hmap_idx_w for heightmap, how many array elements are in each column (z coordinate)
+/// @param hmap_idx_w for heightmap, how many array elements are in each row (x coordinate)
+/// @param hmap_idx_l for heightmap, how many array elements are in each column (z coordinate)
 /// @return 0 if there are no errors. Negative values for errors
 int editor_init(
         Editor *editor, 

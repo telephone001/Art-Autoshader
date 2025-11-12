@@ -9,9 +9,13 @@ layout (std140) uniform cameraData {
 };    
 
 out vec2 tex;
+out float color_dbg;
+
 
 void main()
 {
         gl_Position = projection * view * vec4(a_pos, 1.0);
         tex = a_tex;
+
+        color_dbg = float(gl_VertexID) / 4;
 }
