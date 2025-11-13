@@ -177,7 +177,7 @@ static int cam_plane_mdl_init(RenderData *cam_plane, RenderData *cam_proj, GLuin
                         1,1,
                         0,1,
                 }; 
-                for (int i = 0; i < cam_plane->vertices_length; i++) {
+                for (int i = 0; i < 4; i++) {
                         memcpy(
                                 cam_plane->vertices + i * cam_plane->vertices_stride + 3,
                                 tex_coords + 2*i,
@@ -488,12 +488,8 @@ void editor_free(Editor *editor)
 {
         if (editor != NULL) {
                 //the functions below only frees the stuff that isn't null
-printf("A\n");
                 render_data_free(&(editor->mdl_cam_proj));
-printf("B\n");
                 render_data_free(&(editor->mdl_cam_plane));
-printf("C\n");
                 render_data_free(&(editor->hmap_rd));
-printf("\n");
         }
 }

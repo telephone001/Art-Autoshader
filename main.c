@@ -246,13 +246,8 @@ int main()
                 if (debug_thing == 2) {
                         for (int i = 0; i < 100; i++) {
                                 //Required before editor_free if gui_menu is using the texture.
-                                if (editors[i].mdl_cam_plane.textures != NULL) {
-                                        printf("i=%d at rd=%d\n",i, editors[i].mdl_cam_plane.textures[0]);
-                                }
-
                                 if (editors[i].mdl_cam_plane.textures != NULL && 
                                     gui_menu.img_tex == editors[i].mdl_cam_plane.textures[0]) {
-                                        printf("%d VS %d\n", gui_menu.img_tex, editors[i].mdl_cam_plane.textures[0]);
                                         editors[i].mdl_cam_plane.textures[0] = 0;
                                 }
 
