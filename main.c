@@ -214,6 +214,11 @@ int main()
                 if (debug_thing == 1) {
 
                         // TODO EDITOR DOESNT DO REFERENCE COUNTING FOR ALLOCATED TEXTURES
+                        //Required before editor_free if gui_menu is using the texture.
+                        if (editors[cnt].mdl_cam_plane.textures != NULL &&
+                            gui_menu.img_tex == editors[cnt].mdl_cam_plane.textures[0]) {
+                                editors[cnt].mdl_cam_plane.textures[0] = 0;
+                        }
                         editor_free(&(editors[cnt]));
                         int err = editor_init(
                                 &(editors[cnt]), 
@@ -250,7 +255,6 @@ int main()
                                     gui_menu.img_tex == editors[i].mdl_cam_plane.textures[0]) {
                                         editors[i].mdl_cam_plane.textures[0] = 0;
                                 }
-
                                 editor_free(&(editors[i]));
                         }
 
