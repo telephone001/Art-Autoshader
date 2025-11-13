@@ -481,14 +481,19 @@ int editor_render(Editor *editor)
 }
 
 
-/// @brief frees the data of an editor
+/// @brief frees the data of an editor 
+///             (WARNING: It also deletes gltextures. If something else is using your texture, set the texture in the renderdata to 0)
 /// @param editor the editor you want to free
 void editor_free(Editor *editor)
 {
         if (editor != NULL) {
                 //the functions below only frees the stuff that isn't null
+printf("A\n");
                 render_data_free(&(editor->mdl_cam_proj));
+printf("B\n");
                 render_data_free(&(editor->mdl_cam_plane));
+printf("C\n");
                 render_data_free(&(editor->hmap_rd));
+printf("\n");
         }
 }

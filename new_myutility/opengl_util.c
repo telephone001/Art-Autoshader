@@ -33,37 +33,41 @@ RenderData renderdata_init_clear()
 /// @param render_data the renderdata you wanna free
 void render_data_free(RenderData *render_data)
 {
+printf("1\n");
 	if (render_data->indices != NULL) {
 		free(render_data->indices);
         	render_data->indices = NULL;
 	}
-
+printf("2\n");
 	if (render_data->vertices != NULL) {
 		free(render_data->vertices);
         	render_data->vertices = NULL;
 	}
-
+printf("3\n");
 	if (render_data->textures != NULL) {
 		glDeleteTextures(render_data->num_textures, render_data->textures);
+		printf("lk\n");
 		free(render_data->textures);
+		printf(":(\n");
         	render_data->textures = NULL;
 	}
         
-
+printf("4\n");
 	if (render_data->vao != 0) {
 		glDeleteVertexArrays(1, &render_data->vao);
         	render_data->vao = 0;
 	}	
-
+printf("5\n");
 	if (render_data->vbo != 0) {
 		glDeleteBuffers(1, &render_data->vbo);
         	render_data->vbo = 0;
 	}
-        
+printf("6\n");    
 	if (render_data->ebo != 0) {
 		glDeleteBuffers(1, &render_data->ebo);
         	render_data->ebo = 0;
 	}
+printf("7\n");
 }
 
 /// @brief reads shader files and stores result in a string that is returned. 

@@ -118,6 +118,10 @@ void key_callback_menu_switching(
                 if (key == GLFW_KEY_P && action == GLFW_PRESS) {
                         debug_thing = 1;
                 }
+
+                if (key == GLFW_KEY_L && action == GLFW_PRESS) {
+                        debug_thing = 2;
+                }
 	}
 
         //these are required because the only other alternative would be global variables.
@@ -224,6 +228,11 @@ int main()
 
 
                         if (err < 0) {
+                                //Required before editor_free if gui_menu is using the texture.
+                                if (editors[cnt].mdl_cam_plane.textures != NULL &&
+                                    gui_menu.img_tex == editors[cnt].mdl_cam_plane.textures[0]) {
+                                        editors[cnt].mdl_cam_plane.textures[0] = 0;
+                                }
                                 editor_free(&(editors[cnt]));
                         }
                         debug_thing = 0;
@@ -232,6 +241,25 @@ int main()
                         if (cnt >= 100) {
                                 cnt = 0;
                         }
+                }
+
+                if (debug_thing == 2) {
+                        for (int i = 0; i < 100; i++) {
+                                //Required before editor_free if gui_menu is using the texture.
+                                if (editors[i].mdl_cam_plane.textures != NULL) {
+                                        printf("i=%d at rd=%d\n",i, editors[i].mdl_cam_plane.textures[0]);
+                                }
+
+                                if (editors[i].mdl_cam_plane.textures != NULL && 
+                                    gui_menu.img_tex == editors[i].mdl_cam_plane.textures[0]) {
+                                        printf("%d VS %d\n", gui_menu.img_tex, editors[i].mdl_cam_plane.textures[0]);
+                                        editors[i].mdl_cam_plane.textures[0] = 0;
+                                }
+
+                                editor_free(&(editors[i]));
+                        }
+
+                        debug_thing = 0;
                 }
                 
                 glEnable(GL_DEPTH_TEST);
