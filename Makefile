@@ -15,7 +15,7 @@ ifeq ($(OS),Windows_NT)
 	libraries = -lglfw3 -lcglm
 else
 # Krishna can edit these flags if linux requires another library
-	libraries = -lglfw3WSL -ldl -lX11 -lpthread -lm 
+	libraries = -lglfw3 -lcglm -ldl -lX11 -lpthread -lm 
 endif
 
 

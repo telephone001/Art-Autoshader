@@ -18,7 +18,7 @@ typedef struct Editor {
         RenderData mdl_cam_plane;       //the model for the camera plane
         RenderData mdl_cam_proj;        //the model for the camera projection
 
-        int hmap_w;       //Width corresponds to the x coordinate
+        int hmap_w;       //Width corresponds to the x coordinate (size of each row)
         int hmap_l;       //Length  correspodns to the z coordinate
         RenderData hmap_rd;       //includes the heightmap as vertices
 
@@ -99,9 +99,9 @@ int editor_render(Editor *editor);
 void editor_free(Editor *editor);
 
 
-
-
-
+/// @brief change the editor's heightmap to a sinc function. This function buffers the subdata to the vbo
+/// @param editor the editor to change its heightmap
+void hmap_edit_sinc(Editor *editor);
 
 
 

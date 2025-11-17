@@ -321,11 +321,6 @@ int heightmap_mdl_init(
 
         memset(hmap_rd->vertices, 0, hmap_rd->vertices_length * sizeof(float));
 
-        //THIS IS FOR DEBUGGING
-        for (int i = 0; i < hmap_l * hmap_w; i++) {
-                srand((unsigned int)(glfwGetTime() * 1000000.0));
-                hmap_rd->vertices[i] = (rand() % 20 - 10) / 10.0;
-        }
 
         err = heightmap_indices_create(&(hmap_rd->indices), &(hmap_rd->indices_length), hmap_l, hmap_w);
         ERR_ASSERT_RET((err >= 0), -1, "could not create heightmap idices");
@@ -458,6 +453,7 @@ void cam_proj_mdl_render(RenderData *cam_proj_rdata)
 /// @param hmap_row_len the length of each row in the heightmap
 void hmap_render(RenderData *hmap_rdata, int hmap_row_len)
 {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
         glBindVertexArray(hmap_rdata->vao);
 	glUseProgram(hmap_rdata->shader);
@@ -465,6 +461,7 @@ void hmap_render(RenderData *hmap_rdata, int hmap_row_len)
 
 	glDrawElements(hmap_rdata->primitive_type, hmap_rdata->indices_length, GL_UNSIGNED_INT, 0);
 
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 
@@ -493,3 +490,36 @@ void editor_free(Editor *editor)
                 render_data_free(&(editor->hmap_rd));
         }
 }
+
+/// @brief change the editor's heightmap to a sinc function. This function buffers the subdata to the vbo
+/// @param editor the editor to change its heightmap
+void hmap_edit_sinc(Editor *editor)
+{       
+        //set the heightmap to a sinc function
+        for (int i = 0; i < editor->hmap_w; i++) {
+                for (int j = 0; j < editor->hmap_l; j++) {
+                        int a = i - editor->hmap_w/2;
+                        int b = j - editor->hmap_l/2;
+                        float c = 0.15 * sqrt(a*a+b*b);
+                        float m = 10;
+                        
+                        if (i == editor->hmap_w/2 && j == editor->hmap_l/2) {
+                                editor->hmap_rd.vertices[i * editor->hmap_w + j] = m;
+                        } else {
+                                editor->hmap_rd.vertices[i * editor->hmap_w + j] = m * sin(c) / c;
+                        }
+                }
+        }
+
+        glBindBuffer(GL_ARRAY_BUFFER, editor->hmap_rd.vbo);
+
+        glBufferSubData(
+                GL_ARRAY_BUFFER,
+                0,
+                editor->hmap_rd.vertices_length * sizeof(float),
+                editor->hmap_rd.vertices
+        );
+        
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+

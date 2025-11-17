@@ -17,5 +17,5 @@ vec3 palette(float t)
 void main()
 {
         float h = (height+1) / 2.0f;
-        frag_color = vec4(palette(h * 1.2 + 0.1), 1.0);
+        frag_color = vec4(palette(h * 0.2 - 0.1), 1.0);
 }
