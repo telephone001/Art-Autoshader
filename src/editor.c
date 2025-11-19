@@ -451,18 +451,24 @@ void cam_proj_mdl_render(RenderData *cam_proj_rdata)
 /// @brief renders heightmap
 /// @param hmap_rdata the heightmap you want to render
 /// @param hmap_row_len the length of each row in the heightmap
-void hmap_render(RenderData *hmap_rdata, int hmap_row_len)
+/// @param mat4 model the matrix model for linear algebra manipulation in heightmap
+void hmap_render(RenderData *hmap_rdata, int hmap_row_len, mat4 model)
 {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
         glBindVertexArray(hmap_rdata->vao);
-	glUseProgram(hmap_rdata->shader);
+        glUseProgram(hmap_rdata->shader);
+
         glUniform1i(glGetUniformLocation(hmap_rdata->shader, "hmap_row_len"), hmap_row_len);
 
-	glDrawElements(hmap_rdata->primitive_type, hmap_rdata->indices_length, GL_UNSIGNED_INT, 0);
+        GLint modelLoc = glGetUniformLocation(hmap_rdata->shader, "model");
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, (float*)model);
+
+        glDrawElements(hmap_rdata->primitive_type, hmap_rdata->indices_length, GL_UNSIGNED_INT, 0);
 
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
+
 
 
 /// @brief renders the editor object
@@ -472,11 +478,17 @@ int editor_render(Editor *editor)
 {
         cam_proj_mdl_render(&(editor->mdl_cam_proj));
         cam_plane_mdl_render(&(editor->mdl_cam_plane));
-        hmap_render(&(editor->hmap_rd), editor->hmap_l);
+
+        // Heightmap model transform
+        mat4 model;
+        glm_mat4_identity(model);
+        glm_translate(model, (vec3){0.0f, 0.0f, 0.01f});
+        glm_scale(model, (vec3){1.0f, 1.0f, 1.0f});
+
+        hmap_render(&(editor->hmap_rd), editor->hmap_l, model);
 
         return 0;
 }
-
 
 /// @brief frees the data of an editor 
 ///             (WARNING: It also deletes gltextures. If something else is using your texture, set the texture in the renderdata to 0)
