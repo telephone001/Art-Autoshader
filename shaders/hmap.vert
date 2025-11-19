@@ -1,21 +1,18 @@
-#version 410 core
-layout (location = 0) in float a_height;
+#version 330 core
 
-layout (std140) uniform cameraData {
-        mat4 projection;
-        mat4 view;
-};  
+layout(location = 0) in vec3 aPos;
+layout(location = 1) in float aHeight;
 
-out float height;
+uniform mat4 projection;
+uniform mat4 view;
+uniform mat4 model;        // ← NEW
 
-uniform int hmap_row_len;
+out float heightValue;
 
 void main()
-{       
-        int x = gl_VertexID / hmap_row_len;
-        int z = gl_VertexID % hmap_row_len;
+{
+    vec3 displaced = vec3(aPos.x, aPos.y, aPos.z + aHeight);
 
-        height = a_height;
-
-        gl_Position = projection * view * vec4(vec3(x, a_height, z), 1.0);
+    gl_Position = projection * view * model * vec4(displaced, 1.0);
+    heightValue = aHeight;
 }
