@@ -1,18 +1,18 @@
 #version 330 core
 
-layout(location = 0) in vec3 aPos;
-layout(location = 1) in float aHeight;
+layout(location = 0) in float height;
 
 uniform mat4 projection;
 uniform mat4 view;
-uniform mat4 model;        // ← NEW
-
-out float heightValue;
+uniform mat4 model;
+uniform int hmap_row_len;
 
 void main()
 {
-    vec3 displaced = vec3(aPos.x, aPos.y, aPos.z + aHeight);
+    int idx = gl_VertexID;
+    int x = idx % hmap_row_len;
+    int z = idx / hmap_row_len;
 
-    gl_Position = projection * view * model * vec4(displaced, 1.0);
-    heightValue = aHeight;
+    vec3 pos = vec3(x, height, z);
+    gl_Position = projection * view * model * vec4(pos, 1.0);
 }
