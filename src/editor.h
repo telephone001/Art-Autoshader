@@ -26,7 +26,7 @@ typedef struct Editor {
 
         Camera cam; //the camera object associated with the editor
 
-         Transform hmap_transform; //matrix for transorming heightmap
+        Transform hmap_transform; //matrix for transorming heightmap
 
 } Editor;
 
