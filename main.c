@@ -164,7 +164,7 @@ int main()
                 return -1; // Initialization failed
         }
 
-        GLFWwindow* wnd = glfw_setup(4, 1, SCR_LENGTH, SCR_HEIGHT, "art autoshader");
+        GLFWwindow* wnd = glfw_setup(3, 3, SCR_LENGTH, SCR_HEIGHT, "art autoshader");
 	    if (!wnd)
 	    	return -1;
 

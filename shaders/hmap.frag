@@ -1,7 +1,7 @@
-#version 410 core
+#version 330 core
 
 out vec4 frag_color;
-in float height;
+in float f_height;
 
 //takes in a float and outputs a color on a spectrum.
 //taken from a previous project
@@ -16,6 +16,6 @@ vec3 palette(float t)
 
 void main()
 {
-        float h = (height+1) / 2.0f;
+        float h = (f_height+1) / 2.0f;
         frag_color = vec4(palette(h * 0.2 - 0.1), 1.0);
 }

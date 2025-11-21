@@ -1,5 +1,5 @@
 
-#version 410 core
+#version 330 core
 
 layout (location = 0) in vec2 vertex_pos;
 
