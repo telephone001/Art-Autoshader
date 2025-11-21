@@ -1,4 +1,4 @@
-
+#include "transform.h"
 #ifndef __EDITOR_H__
 #define __EDITOR_H__
 
@@ -8,8 +8,6 @@
 
 #include "glfw_window.h"
 #include "opengl_util.h"
-
-#include "transform.h"
 
 
 
