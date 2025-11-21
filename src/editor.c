@@ -422,7 +422,8 @@ int editor_init(
 
         editor->cam = camera;     //copy the current camera into the editor
 
-
+		transform_init(&editor->hmap_transform);
+		editor->hmap_transform.position[2] = 0.01f;   // match previous hard-coded translation
         return 0;
 }
 
@@ -483,9 +484,9 @@ int editor_render(Editor *editor)
 
         // Heightmap model transform
         mat4 model;
-        glm_mat4_identity(model);
-        glm_translate(model, (vec3){0.0f, 0.0f, 0.01f});
-        glm_scale(model, (vec3){1.0f, 1.0f, 1.0f});
+        transform_get_matrix(&editor->hmap_transform, model);
+
+		hmap_render(&(editor->hmap_rd), editor->hmap_l, model);
 
         hmap_render(&(editor->hmap_rd), editor->hmap_l, model);
 
