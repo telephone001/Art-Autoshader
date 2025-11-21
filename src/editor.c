@@ -131,6 +131,7 @@ int cam_proj_mdl_init(
 /// @return 
 static int cam_plane_mdl_init(RenderData *cam_plane, RenderData *cam_proj, GLuint shader, GLuint img_tex) 
 {
+        // THESE MUST BE MALLOCED SO THAT FREEING THIS DOESN'T KILL THE PROGRAM
         *cam_plane = (RenderData) {
 	        
                 // will be filled out below
@@ -431,6 +432,7 @@ int editor_init(
 void cam_plane_mdl_render(RenderData *cam_plane_rdata)
 {
         glBindVertexArray(cam_plane_rdata->vao);
+        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, cam_plane_rdata->textures[0]);
 
 	glUseProgram(cam_plane_rdata->shader);
