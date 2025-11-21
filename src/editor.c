@@ -1,6 +1,6 @@
 
 #include "editor.h"
-
+#include "transform.h"
 
 extern Camera camera;
 
