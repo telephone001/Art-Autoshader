@@ -9,6 +9,8 @@
 #include "glfw_window.h"
 #include "opengl_util.h"
 
+#include "transform.h"
+
 
 
 #define CAM_PROJ_MDL_DIST 10
@@ -23,6 +25,8 @@ typedef struct Editor {
         RenderData hmap_rd;       //includes the heightmap as vertices
 
         Camera cam; //the camera object associated with the editor
+
+         Transform hmap_transform; //matrix for transorming heightmap
 
 } Editor;
 
