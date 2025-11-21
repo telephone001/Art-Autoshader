@@ -18,7 +18,11 @@ void main()
 {
         if (light_source_type == POINT) {
                 frag_color = texture(tex_point, tex_coord);
-        } else {
+        } else if (light_source_type == DIRECTIONAL) {
                 frag_color = texture(tex_directional, tex_coord);
+        }
+        
+        if (length(frag_color) >= sqrt(4) - 0.15) {
+                discard;
         }
 }

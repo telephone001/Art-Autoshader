@@ -52,7 +52,7 @@ void opengl_settings_init()
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(mat4), cam_projection);
         
         //set background color
-        glClearColor(0.4,0.4,0.4,1);
+        glClearColor(0.1,0.1,0.1,1);
 
 }
 

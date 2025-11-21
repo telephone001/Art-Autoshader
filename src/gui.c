@@ -103,8 +103,9 @@ static int state_main_render(MenuOptions *const gui_menu)
 
 	if (img_err < 0) {
 		// display an error message if texture not found
-		nk_layout_row_static(gui_menu->ctx, 20, 80, 1);
+		nk_layout_row_static(gui_menu->ctx, 20, 180, 1);
 		nk_style_push_color(gui_menu->ctx, &gui_menu->ctx->style.text.color, nk_rgb(255, 0, 0));
+		nk_label(gui_menu->ctx, "Texture not found", NK_TEXT_LEFT);
 		nk_style_pop_color(gui_menu->ctx);
 	} else if (gui_menu->img_tex != 0) {
 		//otherwise, display the image
