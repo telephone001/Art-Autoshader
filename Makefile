@@ -24,7 +24,7 @@ util_files = opengl_util glfw_window general/debug opengl_texture_util
 util_paths = $(addprefix $(myutil)/,$(util_files))
 util_paths_obj = $(addsuffix .o,$(util_paths))
 
-local_files = gui editor light_sources
+local_files = gui editor light_sources transform
 local_paths = $(addprefix src/,$(local_files))
 local_paths_obj = $(addsuffix .o,$(local_paths))
 
