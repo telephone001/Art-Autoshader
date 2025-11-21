@@ -1,30 +1,20 @@
-// Transform.h
 #pragma once
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include <cglm/cglm.h>
 
-struct HeightmapTransform {
-    glm::vec3 translation;    // move onto image plane
-    glm::vec3 rotation;       // euler angles (radians)
-    glm::vec3 scale;          // scale to match image resolution
+typedef struct HeightmapTransform {
+    vec3 translation;   // final translation in world space
+    vec3 rotation;      // euler rotations (radians)
+    vec3 scale;         // scale in x,y,z
+    mat4 matrix;        // final model matrix
+} HeightmapTransform;
 
-    HeightmapTransform()
-        : translation(0.0f), rotation(0.0f), scale(1.0f) {}
+// Fills transform->matrix with transform computed from TRS
+void hmap_transform_compute(HeightmapTransform* transform);
 
-    glm::mat4 getMatrix() const {
-        glm::mat4 M(1.0f);
-
-        // apply translation
-        M = glm::translate(M, translation);
-
-        // apply rotation
-        M = glm::rotate(M, rotation.x, glm::vec3(1,0,0));
-        M = glm::rotate(M, rotation.y, glm::vec3(0,1,0));
-        M = glm::rotate(M, rotation.z, glm::vec3(0,0,1));
-
-        // apply scale
-        M = glm::scale(M, scale);
-
-        return M;
-    }
-};
+// Computes a placement transform that maps the heightmap grid onto the 4 plane points (top-left, top-right, bottom-right, bottom-left)
+void hmap_transform_from_plane(
+    HeightmapTransform* transform,
+    vec3 planePts[4],
+    int hmap_width,
+    int hmap_height
+);
