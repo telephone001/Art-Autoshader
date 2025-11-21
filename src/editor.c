@@ -509,15 +509,21 @@ void editor_free(Editor *editor)
 /// @param editor the editor to change its heightmap
 void hmap_edit_sinc(Editor *editor)
 {       
+
+        int ofst1 = (((rand() % 100) - 50));
+        int ofst2 = (((rand() % 100) - 50));
+        float ofst3 = ((rand() % 10))+ 10;
+        float ofst4 = ((rand() % 10))+ 10;
+
         //set the heightmap to a sinc function
         for (int i = 0; i < editor->hmap_w; i++) {
                 for (int j = 0; j < editor->hmap_l; j++) {
-                        int a = i - editor->hmap_w/2;
-                        int b = j - editor->hmap_l/2;
-                        float c = 0.15 * sqrt(a*a+b*b);
+                        int a = i - editor->hmap_w/2 + ofst1;
+                        int b = j - editor->hmap_l/2 + ofst2;
+                        float c = 0.15 * sqrt(a*a+b*b*ofst3/ofst4);
                         float m = 10;
                         
-                        if (i == editor->hmap_w/2 && j == editor->hmap_l/2) {
+                        if (a==0 && b==0) {
                                 editor->hmap_rd.vertices[i * editor->hmap_w + j] = m;
                         } else {
                                 editor->hmap_rd.vertices[i * editor->hmap_w + j] = m * sin(c) / c;
