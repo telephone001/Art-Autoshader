@@ -423,7 +423,7 @@ int editor_init(
         editor->cam = camera;     //copy the current camera into the editor
 
 		transform_init(&editor->hmap_transform);
-		editor->hmap_transform.position[2] = 0.01f;   // match previous hard-coded translation
+		editor->hmap_transform.translation[2] = 0.01f;
         return 0;
 }
 
