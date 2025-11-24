@@ -1,6 +1,5 @@
 
 #include "editor.h"
-#include "transform.h"
 
 extern Camera camera;
 
@@ -27,7 +26,7 @@ int cam_proj_mdl_init(
 
 
         //the dist between rectangle origin and rectangle top
-        float dist_up = sin(fovy/2) * glms_vec3_norm(glms_vec3_sub(plane_pos, cam.pos));
+        float dist_up = tan(glm_rad(fovy)/2) * glms_vec3_norm(glms_vec3_sub(plane_pos, cam.pos));
 
         //the dist between rectangle origin and the rightost point of the rectangle
         float dist_right = dist_up * aspect_ratio;
@@ -173,10 +172,10 @@ static int cam_plane_mdl_init(RenderData *cam_plane, RenderData *cam_proj, GLuin
         //initialize texture coords for vertices
         {
                 float tex_coords[] = {
-                        1,0,
-                        0,0,
-                        1,1,
                         0,1,
+                        1,1,
+                        0,0,
+                        1,0,
                 }; 
                 for (int i = 0; i < 4; i++) {
                         memcpy(
@@ -422,8 +421,10 @@ int editor_init(
 
         editor->cam = camera;     //copy the current camera into the editor
 
-		transform_init(&editor->hmap_transform);
-		editor->hmap_transform.translation[2] = 0.01f;
+
+        //Commented it out for now
+	//	transform_init(&editor->hmap_transform);
+	//	editor->hmap_transform.translation[2] = 0.01f;
         return 0;
 }
 
@@ -483,10 +484,11 @@ int editor_render(Editor *editor)
         cam_plane_mdl_render(&(editor->mdl_cam_plane));
 
         // Heightmap model transform
-        mat4 model;
-        transform_get_matrix(&editor->hmap_transform, model);
-
-		hmap_render(&(editor->hmap_rd), editor->hmap_l, model);
+        
+        
+        // TODO: I put this as identity so I can compile the code. You can delete this
+        mat4 model = GLM_MAT4_IDENTITY_INIT;
+        //transform_get_matrix(&editor->hmap_transform, model);
 
         hmap_render(&(editor->hmap_rd), editor->hmap_l, model);
 

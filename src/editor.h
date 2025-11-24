@@ -1,6 +1,7 @@
-#include "transform.h"
 #ifndef __EDITOR_H__
 #define __EDITOR_H__
+
+#include "transform.h"
 
 #include "gui.h"
 
