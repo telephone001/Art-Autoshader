@@ -61,38 +61,6 @@ int nuklear_menu_init(MenuOptions *gui_menu, GLFWwindow *wnd, const char *const 
 	return 0;
 }
 
-/// @brief function that calculates the width and height of an image that you want to fit inside a bounded box
-///		with width bound_w and height bound_h. Returns values through r_width and r_height
-/// @param r_width returned width of image
-/// @param r_height returned height of image
-/// @param aspect_ratio aspect ratio of image
-/// @param bound_w width bound on the image
-/// @param bound_h height bound on the image
-/// @return 
-int img_rect_fit(float *r_width, float *r_height, float aspect_ratio, float bound_w, float bound_h)
-{
-	if (!r_width || !r_height)
-		return -1;
-
-	//invalid inputs
-	if (aspect_ratio <= 0 || bound_w <= 0 || bound_h <= 0)
-		return -2;
-
-	//the img will always be bounded by two faces if it truly fits the bound
-
-	//try setting height to be bound_h.
-	if (bound_h * aspect_ratio <= bound_w) {
-		//width fits
-		*r_width = bound_h * aspect_ratio;
-		*r_height = bound_h;
-	} else {
-		*r_width = bound_w;
-		*r_height = bound_w / aspect_ratio;
-	}
-
-	return 0;
-}
-
 // :::::::::::::::TODO:::::::::::::::::::
 
 static int state_main_render(MenuOptions *const gui_menu)
@@ -134,11 +102,7 @@ static int state_main_render(MenuOptions *const gui_menu)
 		//if we loaded a texture, set the other parameters in the menuOptions
 		if (img_err >= 0 && gui_menu->img_tex != 0) {
 			// Set the aspect ratio
-			glBindTexture(GL_TEXTURE_2D, gui_menu->img_tex);
-			int w, h;
-			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &w);
-			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &h);
-			gui_menu->img_aspect_ratio = (float)w/(float)h;	
+			gui_menu->img_aspect_ratio = img_aspect_ratio(gui_menu->img_tex);	
 
 			// set the img_nk
 			gui_menu->img_nk = nk_image_id(gui_menu->img_tex);

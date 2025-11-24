@@ -42,6 +42,8 @@ int cam_proj_mdl_init(
                 rect[i] = plane_pos;
         }
         
+        //23
+        //01 
         rect[0] = glms_vec3_add(rect[0], glms_vec3_scale(cam.up, -dist_up));
         rect[1] = glms_vec3_add(rect[1], glms_vec3_scale(cam.up, -dist_up));
         rect[2] = glms_vec3_add(rect[2], glms_vec3_scale(cam.up,  dist_up));
@@ -120,6 +122,66 @@ int cam_proj_mdl_init(
         return 0;
 }
 
+/// @brief fits a quad with an aspect ratio into the cam plane. Returns results through output_fitted
+/// @param output_fitted output quad. (array of 4 vec3s)
+/// @param aspect_ratio aspect ratio of the thing you want to fit
+/// @param bound the bounds to fit into (vertices of the cam plane)
+///     bottom left
+///     bottom right
+///     top left
+///     top right
+/// @return negative values mean error
+int cam_plane_img_fit(vec3s output_fitted[4], float aspect_ratio, vec3s bound[4])
+{
+        /// 0 bottom left
+        /// 1 bottom right
+        /// 2 top left
+        /// 3 top right
+        float bound_w = glms_vec3_distance(bound[0], bound[1]);
+        float bound_h = glms_vec3_distance(bound[0], bound[2]);
+
+        float r_width, r_height;
+        int err = img_rect_fit(&r_width, &r_height, aspect_ratio, bound_w, bound_h);
+
+        ERR_ASSERT_RET((err >= 0), -3, "img_rect_fit inside cam_plane_img_fit didn't work\n");
+
+        if (fabs(r_width - bound_w) <= 0.0001) {
+                //width has been fitted
+                //squish the height to fit img
+                vec3s plane_up = glms_vec3_normalize(glms_vec3_sub(bound[2], bound[0]));
+                float squish_amnt = (bound_h-r_height) / 2;
+
+                vec3s squish = glms_vec3_scale(plane_up, squish_amnt);
+
+                //push the bottoms up
+                output_fitted[0] = glms_vec3_add(bound[0], squish);
+                output_fitted[1] = glms_vec3_add(bound[1], squish);
+
+                //push the tops down
+                output_fitted[2] = glms_vec3_sub(bound[2], squish);
+                output_fitted[3] = glms_vec3_sub(bound[3], squish);
+                
+
+                
+        } else {
+                ///height has been fitted
+                //squish the width to fit the img
+                vec3s plane_right = glms_vec3_normalize(glms_vec3_sub(bound[1], bound[0]));
+
+                float squish_amnt = (bound_w-r_width) / 2;
+
+                vec3s squish = glms_vec3_scale(plane_right, squish_amnt);
+
+                //push the lefts right
+                output_fitted[0] = glms_vec3_add(bound[0], squish);
+                output_fitted[2] = glms_vec3_sub(bound[2], squish);
+
+                //push the rights left
+                output_fitted[1] = glms_vec3_add(bound[1], squish);
+                output_fitted[3] = glms_vec3_sub(bound[3], squish);
+        }
+        return 0;
+}
 
 /// @brief initializes a cam plane model (plane that includes the image but not the heightmap)
 ///            This is used inside the editor model to display the image on the plane
@@ -153,22 +215,20 @@ static int cam_plane_mdl_init(RenderData *cam_plane, RenderData *cam_proj, GLuin
 	        .shader = shader,
         };
 
+        //23
+        //01 
+        //squish the plane to fit the aspect ratio
+        printf("%f %f %f\n", cam_proj->vertices[3], cam_proj->vertices[4], cam_proj->vertices[5]);
 
-        //copy all plane points from cam_proj to the cam_plane vertices
-        for (int i = 0; i < 4; i++) {
-                memcpy(
-                        cam_plane->vertices + i * cam_plane->vertices_stride,
-                        cam_proj->vertices + (cam_proj->vertices_stride * (i + 1)),
-                        sizeof(vec3s)
-                );
-        }
+        cam_plane_img_fit(
+                (vec3s*)(cam_plane->vertices), 
+                img_aspect_ratio(img_tex), 
+                (vec3s*)(cam_proj->vertices + 3)  //skip over the first vec3.
+        );
+
+        printf("%f %f %f\n", cam_plane->vertices[0], cam_plane->vertices[1], cam_plane->vertices[2]);
 
 
-        for (int i = 0; i < 4; i++) {
-                for (int j = 0; j < 3; j++) {
-                        cam_plane->vertices[i * 5 + j] = cam_proj->vertices[(i+1) * 3 + j];
-                }
-        }
         //initialize texture coords for vertices
         {
                 float tex_coords[] = {
