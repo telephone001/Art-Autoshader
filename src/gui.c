@@ -61,6 +61,37 @@ int nuklear_menu_init(MenuOptions *gui_menu, GLFWwindow *wnd, const char *const 
 	return 0;
 }
 
+/// @brief function that calculates the width and height of an image that you want to fit inside a bounded box
+///		with width bound_w and height bound_h. Returns values through r_width and r_height
+/// @param r_width returned width of image
+/// @param r_height returned height of image
+/// @param aspect_ratio aspect ratio of image
+/// @param bound_w width bound on the image
+/// @param bound_h height bound on the image
+/// @return 
+int img_rect_fit(float *r_width, float *r_height, float aspect_ratio, float bound_w, float bound_h)
+{
+	if (!r_width || !r_height)
+		return -1;
+
+	//invalid inputs
+	if (aspect_ratio <= 0 || bound_w <= 0 || bound_h <= 0)
+		return -2;
+
+	//the img will always be bounded by two faces if it truly fits the bound
+
+	//try setting height to be bound_h.
+	if (bound_h * aspect_ratio <= bound_w) {
+		//width fits
+		*r_width = bound_h * aspect_ratio;
+		*r_height = bound_h;
+	} else {
+		*r_width = bound_w;
+		*r_height = bound_w / aspect_ratio;
+	}
+
+	return 0;
+}
 
 // :::::::::::::::TODO:::::::::::::::::::
 
@@ -124,10 +155,12 @@ static int state_main_render(MenuOptions *const gui_menu)
 	} else if (gui_menu->img_tex != 0) {
 		//otherwise, display the image and set the struct fields
 
-		printf("%f\n", gui_menu->img_aspect_ratio);
+		float w,h;
+		img_rect_fit(&w, &h, gui_menu->img_aspect_ratio, 150, 150); //fit the thing in a 150 by 150 square
+
 		//these determine image dimensions
-		nk_layout_row_begin(gui_menu->ctx, NK_STATIC, 150, 1);		 // controls height
-        	nk_layout_row_push(gui_menu->ctx, 150 * gui_menu->img_aspect_ratio); // controls width
+		nk_layout_row_begin(gui_menu->ctx, NK_STATIC, h, 1); // controls height
+        	nk_layout_row_push(gui_menu->ctx, w);                // controls width
 
 		nk_image(gui_menu->ctx, gui_menu->img_nk);
 	}
