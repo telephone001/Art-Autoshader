@@ -131,7 +131,7 @@ int cam_proj_mdl_init(
 ///     top left
 ///     top right
 /// @return negative values mean error
-int cam_plane_img_fit(vec3s output_fitted[4], float aspect_ratio, vec3s bound[4])
+static int cam_plane_img_fit(vec3s output_fitted[4], float aspect_ratio, vec3s bound[4])
 {
         /// 0 bottom left
         /// 1 bottom right
@@ -343,18 +343,20 @@ static int heightmap_indices_create(
 }
 
 
-/// @brief initializes the heightmap, mallocing a vertices and indices array. The vertices will be all 0s
+/// @brief uses an initialized hmap to build the heightmap rd, mallocing an indices array.
 ///             and the indices will be filled out
 /// @param hmap_rd the returned heightmap
 /// @param shader  shader for the heightmap (tesselator)
 /// @param hmap_w heightmap length (how many array members are in each row)
 /// @param hmap_l heightmap width (how many array members are in each column)
+/// @param hmap the float array for the heightmap. (must be allocated before using this function)
 /// @return 0 for success. negative values for error
 int heightmap_mdl_init(
         RenderData *hmap_rd,
         GLuint shader,
         int hmap_w,
-        int hmap_l
+        int hmap_l,
+        float *hmap
 )
 {
         int err = 0;
@@ -365,7 +367,7 @@ int heightmap_mdl_init(
 	        .vbo = 0, 
 	        .ebo = 0, 
 
-	        .vertices = malloc(hmap_l * hmap_w * sizeof(float)), 
+	        .vertices = hmap, 
 	        .vertices_stride = 1,                 
 	        .vertices_length = hmap_l * hmap_w,
 
@@ -381,9 +383,6 @@ int heightmap_mdl_init(
 	        .primitive_type = GL_TRIANGLES,
 	        .shader = shader,
         };
-
-        memset(hmap_rd->vertices, 0, hmap_rd->vertices_length * sizeof(float));
-
 
         err = heightmap_indices_create(&(hmap_rd->indices), &(hmap_rd->indices_length), hmap_l, hmap_w);
         ERR_ASSERT_RET((err >= 0), -1, "could not create heightmap idices");
@@ -473,12 +472,14 @@ int editor_init(
 
         editor->hmap_l = hmap_idx_l;       //Length corresponds to the x coordinate
         editor->hmap_w = hmap_idx_w;       //Width  correspodns to the z coordinate
+        editor->hmap = malloc(hmap_idx_l * hmap_idx_w * sizeof(float));
 
         err = heightmap_mdl_init(
                 &(editor->hmap_rd),
                 shader_hmap,
                 editor->hmap_l,
-                editor->hmap_w
+                editor->hmap_w,
+                editor->hmap
         );
         ERR_ASSERT_RET((err == 0), -4, "heightmap_mdl_init failed");
 
@@ -563,6 +564,11 @@ int editor_render(Editor *editor)
 /// @param editor the editor you want to free
 void editor_free(Editor *editor)
 {
+        if (editor->hmap == NULL) {
+                free(editor->hmap);
+                editor->hmap = NULL;
+        }
+
         if (editor != NULL) {
                 //the functions below only frees the stuff that isn't null
                 render_data_free(&(editor->mdl_cam_proj));

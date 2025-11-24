@@ -21,6 +21,7 @@ typedef struct Editor {
 
         int hmap_w;       //Width corresponds to the x coordinate (size of each row)
         int hmap_l;       //Length  correspodns to the z coordinate
+        float *hmap;
         RenderData hmap_rd;       //includes the heightmap as vertices
 
         Camera cam; //the camera object associated with the editor
@@ -57,18 +58,20 @@ void cam_plane_mdl_render(RenderData *cam_plane_rdata);
 void cam_proj_mdl_render(RenderData *cam_proj_rdata);
 
 
-/// @brief initializes the heightmap, mallocing a vertices and indices array. The vertices will be all 0s
+/// @brief uses an initialized hmap to build the heightmap rd, mallocing an indices array.
 ///             and the indices will be filled out
 /// @param hmap_rd the returned heightmap
 /// @param shader  shader for the heightmap (tesselator)
 /// @param hmap_w heightmap length (how many array members are in each row)
 /// @param hmap_l heightmap width (how many array members are in each column)
+/// @param hmap the float array for the heightmap. (must be allocated before using this function)
 /// @return 0 for success. negative values for error
 int heightmap_mdl_init(
         RenderData *hmap_rd,
         GLuint shader,
+        int hmap_w,
         int hmap_l,
-        int hmap_w
+        float *hmap
 );
 
 /// @brief initializes an editor given a pointer to it
