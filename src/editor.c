@@ -174,10 +174,10 @@ int cam_plane_img_fit(vec3s output_fitted[4], float aspect_ratio, vec3s bound[4]
 
                 //push the lefts right
                 output_fitted[0] = glms_vec3_add(bound[0], squish);
-                output_fitted[2] = glms_vec3_sub(bound[2], squish);
+                output_fitted[2] = glms_vec3_add(bound[2], squish);
 
                 //push the rights left
-                output_fitted[1] = glms_vec3_add(bound[1], squish);
+                output_fitted[1] = glms_vec3_sub(bound[1], squish);
                 output_fitted[3] = glms_vec3_sub(bound[3], squish);
         }
         return 0;
@@ -217,16 +217,19 @@ static int cam_plane_mdl_init(RenderData *cam_plane, RenderData *cam_proj, GLuin
 
         //23
         //01 
-        //squish the plane to fit the aspect ratio
-        printf("%f %f %f\n", cam_proj->vertices[3], cam_proj->vertices[4], cam_proj->vertices[5]);
-
-        cam_plane_img_fit(
-                (vec3s*)(cam_plane->vertices), 
-                img_aspect_ratio(img_tex), 
-                (vec3s*)(cam_proj->vertices + 3)  //skip over the first vec3.
-        );
-
-        printf("%f %f %f\n", cam_plane->vertices[0], cam_plane->vertices[1], cam_plane->vertices[2]);
+        //squish the plane to fit the aspect ratio (be aware that the stride of vertices is 5)
+        {
+                vec3s cam_plane_points[4];
+                cam_plane_img_fit(
+                        cam_plane_points, 
+                        img_aspect_ratio(img_tex), 
+                        (vec3s*)(cam_proj->vertices + 3)  //skip over the first vec3.
+                );
+                
+                for (int i = 0; i < 4; i++) {
+                        memcpy(cam_plane->vertices + i * cam_plane->vertices_stride, &(cam_plane_points[i]), sizeof(vec3s));
+                }
+        }
 
 
         //initialize texture coords for vertices
