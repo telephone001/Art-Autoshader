@@ -50,7 +50,9 @@ typedef struct MenuOptions {
 
         int font_size; //will govern the size of the letters and textboxes in the gui
 
-        char img_path[GUI_IMG_PATH_BUFF_LEN]; //buffer where the image is stored. (textbox buffer)
+
+        char img_path[GUI_IMG_PATH_BUFF_LEN]; //buffer where the image path is stored. (textbox buffer)
+        float img_aspect_ratio; //the aspect ratio of the image (width / height)
         GLuint img_tex;   //glfw texture id of the image we want to use
         struct nk_image img_nk; //nk handler of the image
         int img_copied; //boolean for if the image is being used by cam_proj_mdl (borrowed)

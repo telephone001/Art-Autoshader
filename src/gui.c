@@ -27,6 +27,7 @@ int nuklear_menu_init(MenuOptions *gui_menu, GLFWwindow *wnd, const char *const 
 
 		// 0 for no image selected currently (will modify when choosing an image)
 		.img_path = {0}, //empty path Put to all zeros to ensure the last one is a null terminator
+		.img_aspect_ratio = 0,
         	.img_tex = 0,	
         	.img_nk = {0},
 		.img_copied = 0,
@@ -98,6 +99,19 @@ static int state_main_render(MenuOptions *const gui_menu)
 		}
 
 		img_err = load_2dtexture(&gui_menu->img_tex, gui_menu->img_path, GL_RGB);
+
+		//if we loaded a texture, set the other parameters in the menuOptions
+		if (img_err >= 0 && gui_menu->img_tex != 0) {
+			// Set the aspect ratio
+			glBindTexture(GL_TEXTURE_2D, gui_menu->img_tex);
+			int w, h;
+			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &w);
+			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &h);
+			gui_menu->img_aspect_ratio = (float)w/(float)h;	
+
+			// set the img_nk
+			gui_menu->img_nk = nk_image_id(gui_menu->img_tex);
+		}
 	}
 
 
@@ -108,10 +122,13 @@ static int state_main_render(MenuOptions *const gui_menu)
 		nk_label(gui_menu->ctx, "Texture not found", NK_TEXT_LEFT);
 		nk_style_pop_color(gui_menu->ctx);
 	} else if (gui_menu->img_tex != 0) {
-		//otherwise, display the image
-		nk_layout_row_begin(gui_menu->ctx, NK_STATIC, 150, 1);
-        	nk_layout_row_push(gui_menu->ctx, 150);
-		gui_menu->img_nk = nk_image_id(gui_menu->img_tex);
+		//otherwise, display the image and set the struct fields
+
+		printf("%f\n", gui_menu->img_aspect_ratio);
+		//these determine image dimensions
+		nk_layout_row_begin(gui_menu->ctx, NK_STATIC, 150, 1);		 // controls height
+        	nk_layout_row_push(gui_menu->ctx, 150 * gui_menu->img_aspect_ratio); // controls width
+
 		nk_image(gui_menu->ctx, gui_menu->img_nk);
 	}
 
