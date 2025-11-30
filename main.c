@@ -323,7 +323,7 @@ int main()
 
 
 		if (in_menu) {
-                        nuklear_menu_render(wnd, &gui_menu);
+                        nuklear_menu_render(wnd, delta_time, &gui_menu);
         		glfwSetCursorPosCallback(wnd, NULL);
         	} else {
                 	handle_wasd_move(wnd, delta_time);
