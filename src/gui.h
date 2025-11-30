@@ -38,7 +38,10 @@
 
 // If we ever want to make more states, we can. But right now there will only be one state
 typedef enum MenuState {
-        MENU_STATE_MAIN
+        MENU_STATE_MAIN,
+        MENU_STATE_IMG_SELECT,
+        MENU_STATE_HEIGHTMAP_EDIT,
+        NUM_STATES
 } MenuState;
 
 

@@ -63,12 +63,20 @@ int nuklear_menu_init(MenuOptions *gui_menu, GLFWwindow *wnd, const char *const 
 
 // :::::::::::::::TODO:::::::::::::::::::
 
-static int state_main_render(MenuOptions *const gui_menu)
+/// @brief Renders the image selection state of the gui menu
+/// @param gui_menu the gui menu's options
+/// @return negative if there is an error. Positive for success
+static int state_img_select_render(MenuOptions *const gui_menu)
 {
+	nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
+	if (nk_button_label(gui_menu->ctx, "back to main menu")) {
+		gui_menu->state = MENU_STATE_MAIN;
+	}
+
 	// you could move this into the gui_menu if you wanted to, but for testing a static var is easier
 	static int img_err = 0; //the error value of load_2dtexture
 
-	nk_layout_row_static(gui_menu->ctx, 30, 200, 1);
+	nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
 	nk_flags textbox_event =  nk_edit_string_zero_terminated(
 		gui_menu->ctx,
 		NK_EDIT_FIELD, 
@@ -112,15 +120,20 @@ static int state_main_render(MenuOptions *const gui_menu)
 
 	if (img_err < 0) {
 		// display an error message if texture not found
-		nk_layout_row_static(gui_menu->ctx, 20, 180, 1);
+		nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
 		nk_style_push_color(gui_menu->ctx, &gui_menu->ctx->style.text.color, nk_rgb(255, 0, 0));
 		nk_label(gui_menu->ctx, "Texture not found", NK_TEXT_LEFT);
 		nk_style_pop_color(gui_menu->ctx);
 	} else if (gui_menu->img_tex != 0) {
 		//otherwise, display the image and set the struct fields
+		
+		//total size of the gui menu
+		struct nk_rect total = nk_window_get_content_region(gui_menu->ctx);
+
 
 		float w,h;
-		img_rect_fit(&w, &h, gui_menu->img_aspect_ratio, 150, 150); //fit the thing in a 150 by 150 square
+		//TODO: 120 is used to fit the image into a bound. (used to calculate remaining space in gui)
+		img_rect_fit(&w, &h, gui_menu->img_aspect_ratio, total.w, total.h - 120);
 
 		//these determine image dimensions
 		nk_layout_row_begin(gui_menu->ctx, NK_STATIC, h, 1); // controls height
@@ -130,6 +143,23 @@ static int state_main_render(MenuOptions *const gui_menu)
 	}
 
 	return 0;
+}
+
+
+static int state_main_render(MenuOptions *const gui_menu)
+{
+	nk_layout_row_static(gui_menu->ctx, 30, 200, 1);
+	if (nk_button_label(gui_menu->ctx, "select image")) {
+		gui_menu->state = MENU_STATE_IMG_SELECT;
+	}
+}
+
+static state_heightmap_edit_render(MenuOptions *const gui_menu)
+{
+	nk_layout_row_static(gui_menu->ctx, 30, 200, 1);
+	if (nk_button_label(gui_menu->ctx, "select image")) {
+		gui_menu->state = MENU_STATE_IMG_SELECT;
+	}
 }
 
 
@@ -151,8 +181,27 @@ void nuklear_menu_render(GLFWwindow *wnd, MenuOptions *const gui_menu)
 	}
 
 
-	//render the stuff inside the menu
-	state_main_render(gui_menu);
+
+
+	//renders gui pages
+	switch (gui_menu->state) {
+		case MENU_STATE_MAIN:
+			state_main_render(gui_menu);
+			break;
+
+		case MENU_STATE_IMG_SELECT:
+			state_img_select_render(gui_menu);
+			break;
+
+		case MENU_STATE_HEIGHTMAP_EDIT:
+			state_heightmap_edit_render(gui_menu);
+			break;
+
+		default:
+			nk_layout_row_static(gui_menu->ctx, 30, 200, 1);
+			nk_label(gui_menu->ctx, "Error!", NK_TEXT_LEFT);
+			break;
+	}
 
 
 	//necessary code for rendering
