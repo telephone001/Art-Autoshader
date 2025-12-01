@@ -30,17 +30,23 @@
 
 #define MAX_EDITORS 100
 
+
+#define ORTHO_SCALE 1.0 / 100.0
+
 extern Camera camera; //handler for cameradata;
 extern int in_menu;   //menu status
 
 
 int debug_thing = 0; // TODO  REMOVE IN FINAL PRODUCT
 
+
+//TODO these are only in global because I dont want to send a window hint pointer to callback
+
 mat4 flycam_projection;
 mat4 flycam_view;
 
-mat4 ortho_proj; //TODO these are only in global because I dont want to send a window hint pointer to callback
 mat4 offset_view;
+mat4 ortho_proj; //used to actually edit the heightmap
 
 
 
@@ -53,6 +59,16 @@ void opengl_settings_init()
 
         //static camera data
 	glm_perspective(glm_rad(FOVY), (float)SCR_LENGTH / SCR_HEIGHT, NEAR, FAR, flycam_projection);
+
+        glm_ortho(
+                -SCR_LENGTH * ORTHO_SCALE, //left
+                SCR_LENGTH * ORTHO_SCALE, //right
+                -SCR_HEIGHT * ORTHO_SCALE, //bottom
+                SCR_HEIGHT * ORTHO_SCALE, //top
+                NEAR, //near
+                FAR,  //far
+                ortho_proj
+        );
 
         //set background color
         glClearColor(0.1, 0.2, 0.3, 1.0);
@@ -170,10 +186,10 @@ void framebuffer_size_callback(GLFWwindow *const window, int width, int height)
 	glm_perspective(glm_rad(FOVY), (double)width / (double)height, NEAR, FAR, flycam_projection);
 
         glm_ortho(
-                0.0, //left
-                width, //right
-                0.0, //bottom
-                height, //top
+                -width * ORTHO_SCALE, //left
+                width * ORTHO_SCALE, //right
+                -height * ORTHO_SCALE, //bottom
+                height * ORTHO_SCALE, //top
                 NEAR, //near
                 FAR,  //far
                 ortho_proj
@@ -360,11 +376,11 @@ int main()
                 editor_cam.pos = glms_vec3_add(editor_cam.pos, ofr);
                 editor_cam.pos = glms_vec3_add(editor_cam.pos, ofu);
 
-                get_cam_view(editor_cam, offset_view); 
+                get_cam_view(camera, offset_view); 
 
                 for (int i = 0; i < MAX_EDITORS; i++) {
                         if (editors[i].mdl_cam_proj.vao != 0 ) {
-                                editor_render(&(editors[i]), 1, flycam_projection, offset_view);
+                                editor_render(&(editors[i]), 1, ortho_proj, offset_view);
                         }
                 }
 
