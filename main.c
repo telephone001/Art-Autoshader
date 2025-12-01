@@ -349,8 +349,17 @@ int main()
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
                 Camera editor_cam = camera;
-                editor_cam.pos.x += gui_menu.ecam_data.pos_offset.x;
-                editor_cam.pos.y += gui_menu.ecam_data.pos_offset.y;
+                float ofx, ofy;
+                ofx = gui_menu.ecam_data.pos_offset.x;
+                ofy = gui_menu.ecam_data.pos_offset.y;
+
+
+                vec3s ofr = glms_vec3_scale(editor_cam.right, ofx);
+                vec3s ofu = glms_vec3_scale(editor_cam.up, ofy);
+
+                editor_cam.pos = glms_vec3_add(editor_cam.pos, ofr);
+                editor_cam.pos = glms_vec3_add(editor_cam.pos, ofu);
+
                 get_cam_view(editor_cam, offset_view); 
 
                 for (int i = 0; i < MAX_EDITORS; i++) {

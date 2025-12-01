@@ -327,11 +327,11 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 		int pressed = glfwGetMouseButton(wnd, GLFW_MOUSE_BUTTON_LEFT);
 
 		//TODO: change the scale
-		float scale = 1;
+		float scale = 5000;
 
 		if ((pressed == GLFW_PRESS)) {
-			gui_menu->ecam_data.pos_offset.x += (mouse_x - prev_mouse_x) * delta_time * scale;
-			gui_menu->ecam_data.pos_offset.y += (mouse_y - prev_mouse_y) * delta_time * scale;
+			gui_menu->ecam_data.pos_offset.x -= (mouse_x - prev_mouse_x) * delta_time * scale / img_rect.w;
+			gui_menu->ecam_data.pos_offset.y += (mouse_y - prev_mouse_y) * delta_time * scale / img_rect.h;
 		}
 
 		//printf("%f %f\n", gui_menu->ecam_offset.x, gui_menu->ecam_offset.y);
