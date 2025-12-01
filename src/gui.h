@@ -52,6 +52,8 @@ typedef struct EditorCamData {
         GLuint tex;        //texture to the framebuffer of what the editor camera sees
         struct nk_image tex_nk; //nk handler of the editor tex
         vec2s pos_offset;     //how far away the editor camera is from the center of the image (x and y correspond with cam_right and cam_up)
+        int width;    // the pixel width of the fbo
+        int height;   //the pixel height of the fbo
 } EditorCamData;
 
 /// @brief 

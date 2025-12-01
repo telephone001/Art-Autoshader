@@ -52,7 +52,7 @@ void opengl_settings_init()
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(mat4), cam_projection);
         
         //set background color
-        glClearColor(0.1,0.1,0.1,1);
+        glClearColor(0.1, 0.2, 0.3, 1.0);
 
 }
 
@@ -329,8 +329,7 @@ int main()
 ///////////////////////////////// TESTS ON FRAMEBUFFER ////////////////////////////////////
                 glBindFramebuffer(GL_FRAMEBUFFER, gui_menu.ecam_data.fbo);
 
-                        
-                glClearColor(0.1f, 0.2f, 0.3f, 0.0f);
+                
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
                 for (int i = 0; i < MAX_EDITORS; i++) {

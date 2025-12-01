@@ -7,20 +7,23 @@
 
 /// @brief creates an ecam_data given the width and height of framebuffer
 /// @param ret_ecam_data the ecam_data you want to create
-/// @param width width of framebuffer you want to make
-/// @param height height of framebuffer you want to make
+/// @param width pixel width of framebuffer you want to make
+/// @param height pixel height of framebuffer you want to make
 /// @return 0 on success. -1 on gl error
 int editor_cam_data_init(EditorCamData *ecam_data, int width, int height)
 {
 	*ecam_data = (EditorCamData){
 	// initialized here
         	.pos_offset = (vec2s){0},  
+		.width = width,
+		.height = height,
 
 	// will be set below
 		.fbo = 0,
 		.rbo = 0,
 		.tex = 0,
         	.tex_nk = {0},
+
 	};
 
         glGenFramebuffers(1, &ecam_data->fbo);
@@ -44,6 +47,21 @@ int editor_cam_data_init(EditorCamData *ecam_data, int width, int height)
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	return 0;
+}
+
+/// @brief frees the editor cam data
+/// @param ecam_data  editor cam data
+void editor_cam_data_free(EditorCamData *ecam_data)
+{
+	glDeleteFramebuffers(1, &ecam_data->fbo);
+	ecam_data->fbo = 0;
+
+	glDeleteTextures(1, &ecam_data->tex);
+	ecam_data->tex = 0;
+
+	glDeleteRenderbuffers(1, &ecam_data->rbo);
+	ecam_data->rbo = 0;
+
 }
 
 
@@ -143,13 +161,14 @@ static void menu_fit_img(struct nk_context *ctx, struct nk_image img, float aspe
 
 }
 
+
+//This thing is not used, but I thought it would be useful one day
 /// @brief stretches an image to fit to the nuklear menu.
 ///		you need to leave a vertical margin, which is for the other widgits you put vertically
 /// @param ctx the context of the nuklear menu
 /// @param img the nuklear image
 /// @param margin how much height space should I leave for the rest of the widgits in the gui
-/// @return the width and height of the image
-static vec2s menu_stretch_img(struct nk_context *ctx, struct nk_image img, float margin)
+static void menu_stretch_img(struct nk_context *ctx, struct nk_image img, float margin)
 {
 	//total size of the gui menu
 	struct nk_rect total = nk_window_get_content_region(ctx);
@@ -162,8 +181,6 @@ static vec2s menu_stretch_img(struct nk_context *ctx, struct nk_image img, float
         nk_layout_row_push(ctx, w);                // controls width
 
 	nk_image(ctx, img);
-
-	return (vec2s){w, h};
 }
 
 // :::::::::::::::TODO:::::::::::::::::::
@@ -251,6 +268,7 @@ static void state_main_render(MenuOptions *const gui_menu)
 	}
 }
 
+
 static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta_time, GLFWwindow *wnd)
 {
 	nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
@@ -258,9 +276,15 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 		gui_menu->state = MENU_STATE_MAIN;
 	}
 	
+
+
 	if (gui_menu->ecam_data.tex != 0) {
-		vec2s tmp = menu_stretch_img(gui_menu->ctx, gui_menu->ecam_data.tex_nk, 30);
-		//printf("%f %f\n", tmp.x, tmp.y);
+		menu_fit_img(
+			gui_menu->ctx, 
+			gui_menu->ecam_data.tex_nk, 
+			gui_menu->ecam_data.width / gui_menu->ecam_data.height, 
+			30
+		);
 	} else {
 		// display an error message if texture not found
 		nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
@@ -269,13 +293,22 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 		nk_style_pop_color(gui_menu->ctx);
 	}
 
+	int width, height;
+	glfwGetWindowSize(wnd, &width, &height);
+
+	// Replace the fbo if the nuklear window changed size
+	if (width != gui_menu->ecam_data.width || height != gui_menu->ecam_data.height) {
+		editor_cam_data_free(&gui_menu->ecam_data);
+		//TODO remember the error value here
+		editor_cam_data_init(&gui_menu->ecam_data, width, height);
+	}
+
 	// Get the rectangle of the img (prev widget)
 	struct nk_rect img_rect = nk_widget_bounds(gui_menu->ctx);
 
 	// NUKLEAR BUG. 
 	img_rect.y -= img_rect.h;
 
-	//printf("%f %f %f %f\n", img_rect.x, img_rect.y, img_rect.w, img_rect.h);
 
 	// handle mouse behaviors in editor
 	if (nk_input_is_mouse_hovering_rect(&gui_menu->ctx->input, img_rect)) {
