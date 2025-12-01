@@ -561,7 +561,11 @@ void hmap_render(RenderData *hmap_rdata, int hmap_row_len, int in_ecam_view, mat
 
 
 
-
+/// @brief renders an editor object. You are in charge of if projection and view are for flycam or editor
+/// @param editor the editor object
+/// @param in_ecam_view 1 if you are using ecam view. This is just used as a uniform to horizontally flip the shaders.
+/// @param projection you are in charge of sending either an orthogonal or a perspective projection
+/// @param view you are in charge of whether you send the flycam or the editor cam
 void editor_render(Editor *editor, int in_ecam_view, mat4 projection, mat4 view)
 {
         if (in_ecam_view == 0) {
@@ -579,90 +583,14 @@ void editor_render(Editor *editor, int in_ecam_view, mat4 projection, mat4 view)
         mat4 model = GLM_MAT4_IDENTITY_INIT;
         //transform_get_matrix(&editor->hmap_transform, model);
 
-        if (in_ecam_view != 0) {
+        if (in_ecam_view == 0) {
+                hmap_render(&(editor->hmap_rd), editor->hmap_l, in_ecam_view, projection, view, model);
+        } else {
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        }
-        hmap_render(&(editor->hmap_rd), editor->hmap_l, in_ecam_view, projection, view, model);
-        if (in_ecam_view != 0) {
+                hmap_render(&(editor->hmap_rd), editor->hmap_l, in_ecam_view, projection, view, model);
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
 }
-
-/*
-void editor_cam_render(Editor *editor, MenuOptions *gui_menu, GLFWwindow *wnd, int editor_mode) 
-{
-        cam_proj_mdl_render(&(editor->mdl_cam_proj), projection, view);
-        cam_plane_mdl_render(&(editor->mdl_cam_plane), projection, view);
-
-        // Heightmap model transform
-        
-        
-        // TODO: I put this as identity so I can compile the code. You can delete this
-        mat4 model = GLM_MAT4_IDENTITY_INIT;
-        //transform_get_matrix(&editor->hmap_transform, model);
-
-
-        //render the hmap
-
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-        glBindVertexArray(editor->hmap_rd.vao);
-
-        //IMPORTANT: use a different shader
-        glUseProgram(gui_menu->ecam_data.shader);
-
-
-        glUniform1i(glGetUniformLocation(gui_menu->ecam_data.shader, "hmap_row_len"), editor->hmap_l);
-        glUniform1i(glGetUniformLocation(gui_menu->ecam_data.shader, "editor_mode"), editor_mode);
-
-        GLint modelLoc = glGetUniformLocation(gui_menu->ecam_data.shader, "model");
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, (float*)model);
-
-        if (editor_mode != 0) {
-                mat4s offset_view;
-
-                Camera editor_cam = camera;
-                editor_cam.pos.x += gui_menu->ecam_data.pos_offset.x;
-                editor_cam.pos.y += gui_menu->ecam_data.pos_offset.y;
-                offset_view = get_cam_view(editor_cam);
-
-                glUniformMatrix4fv(
-                        glGetUniformLocation(gui_menu->ecam_data.shader, "offset_view"), 
-                        1, 
-                        GL_FALSE, 
-                        (float*)&offset_view
-                );
-
-
-                mat4s ortho_proj;
-                int width, height;
-                glfwGetFramebufferSize(wnd, &width, &height);
-
-
-                ortho_proj = glms_ortho(
-                        0.0, //left
-                        width, //right
-                        0.0, //bottom
-                        height, //top
-                        -1.0, //near
-                        1.0  //far
-                );
-
-                glUniformMatrix4fv(
-                        glGetUniformLocation(gui_menu->ecam_data.shader, "ortho_proj"), 
-                        1, 
-                        GL_FALSE, 
-                        (float*)&ortho_proj
-                );
-        }
-
-        glDrawElements(editor->hmap_rd.primitive_type, editor->hmap_rd.indices_length, GL_UNSIGNED_INT, 0);
-
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-
-}
-*/
 
 /// @brief frees the data of an editor 
 ///             (WARNING: It also deletes gltextures. If something else is using your texture, set the texture in the renderdata to 0)

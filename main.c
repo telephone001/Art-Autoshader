@@ -39,6 +39,11 @@ int debug_thing = 0; // TODO  REMOVE IN FINAL PRODUCT
 mat4 flycam_projection;
 mat4 flycam_view;
 
+mat4 ortho_proj; //TODO these are only in global because I dont want to send a window hint pointer to callback
+mat4 offset_view;
+
+
+
 /// @brief 
 void opengl_settings_init()
 {
@@ -48,7 +53,7 @@ void opengl_settings_init()
 
         //static camera data
 	glm_perspective(glm_rad(FOVY), (float)SCR_LENGTH / SCR_HEIGHT, NEAR, FAR, flycam_projection);
-        
+
         //set background color
         glClearColor(0.1, 0.2, 0.3, 1.0);
 
@@ -163,6 +168,16 @@ void framebuffer_size_callback(GLFWwindow *const window, int width, int height)
 {
 	//change the projection matrix
 	glm_perspective(glm_rad(FOVY), (double)width / (double)height, NEAR, FAR, flycam_projection);
+
+        glm_ortho(
+                0.0, //left
+                width, //right
+                0.0, //bottom
+                height, //top
+                NEAR, //near
+                FAR,  //far
+                ortho_proj
+        );
 
 	//resize the viewport
 	glViewport(0, 0, width, height);
@@ -333,9 +348,14 @@ int main()
                 
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+                Camera editor_cam = camera;
+                editor_cam.pos.x += gui_menu.ecam_data.pos_offset.x;
+                editor_cam.pos.y += gui_menu.ecam_data.pos_offset.y;
+                get_cam_view(editor_cam, offset_view); 
+
                 for (int i = 0; i < MAX_EDITORS; i++) {
                         if (editors[i].mdl_cam_proj.vao != 0 ) {
-                                editor_render(&(editors[i]), 1, flycam_projection, flycam_view);
+                                editor_render(&(editors[i]), 1, flycam_projection, offset_view);
                         }
                 }
 
