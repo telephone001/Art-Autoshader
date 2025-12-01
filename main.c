@@ -325,6 +325,24 @@ int main()
                                 editor_render(&(editors[i]));
                         }
                 }
+
+///////////////////////////////// TESTS ON FRAMEBUFFER ////////////////////////////////////
+                glBindFramebuffer(GL_FRAMEBUFFER, gui_menu.ecam_data.fbo);
+
+                        
+                glClearColor(0.1f, 0.2f, 0.3f, 0.0f);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+                for (int i = 0; i < MAX_EDITORS; i++) {
+                        if (editors[i].mdl_cam_proj.vao != 0 ) {
+                                editor_render(&(editors[i]));
+                        }
+                }
+
+                glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+///////////////////////////////// TESTS ON FRAMEBUFFER ////////////////////////////////////
+
                 
                 // REMEMBER THAT THIS CAN RETURN AN ERROR
                 light_sources_render(&light_sources_data);

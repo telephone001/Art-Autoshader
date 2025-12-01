@@ -120,18 +120,16 @@ int nuklear_menu_init(MenuOptions *gui_menu, GLFWwindow *wnd, const char *const 
 
 
 
-/// @brief dynamically fits a nk image into the reminaing space of a gui menu (you can leave a margin on the bottom)
+/// @brief dynamically fits a nk image into the reminaing space of a gui menu.
+///		you need to leave a vertical margin, which is for the other widgits
 /// @param ctx the context of the nuklear menu
 /// @param img the nuklear image
-/// @param margin how much height space should I leave for the rest of the widgits in the gui
 /// @param aspect_ratio the aspect ratio of the image
+/// @param margin how much height space should I leave for the rest of the widgits in the gui
 static void menu_fit_img(struct nk_context *ctx, struct nk_image img, float aspect_ratio, float margin)
 {
 	//total size of the gui menu
 	struct nk_rect total = nk_window_get_content_region(ctx);
-
-	// rect data of the last widgit placed
-	struct nk_rect last = nk_layout_widget_bounds(ctx);
 
 	float w,h;
 	//TODO: 120 is used to fit the image into a bound. (used to calculate remaining space in gui)
@@ -143,6 +141,29 @@ static void menu_fit_img(struct nk_context *ctx, struct nk_image img, float aspe
 
 	nk_image(ctx, img);
 
+}
+
+/// @brief stretches an image to fit to the nuklear menu.
+///		you need to leave a vertical margin, which is for the other widgits you put vertically
+/// @param ctx the context of the nuklear menu
+/// @param img the nuklear image
+/// @param margin how much height space should I leave for the rest of the widgits in the gui
+/// @return the width and height of the image
+static vec2s menu_stretch_img(struct nk_context *ctx, struct nk_image img, float margin)
+{
+	//total size of the gui menu
+	struct nk_rect total = nk_window_get_content_region(ctx);
+
+	float w = total.w;
+	float h = total.h - margin;
+
+	//these determine image dimensions
+	nk_layout_row_begin(ctx, NK_STATIC, h, 1); // controls height
+        nk_layout_row_push(ctx, w);                // controls width
+
+	nk_image(ctx, img);
+
+	return (vec2s){w, h};
 }
 
 // :::::::::::::::TODO:::::::::::::::::::
@@ -237,8 +258,9 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 		gui_menu->state = MENU_STATE_MAIN;
 	}
 	
-	if (gui_menu->img_tex != 0) {
-		menu_fit_img(gui_menu->ctx, gui_menu->ecam_data.tex_nk, gui_menu->img_aspect_ratio, 30);
+	if (gui_menu->ecam_data.tex != 0) {
+		vec2s tmp = menu_stretch_img(gui_menu->ctx, gui_menu->ecam_data.tex_nk, 30);
+		//printf("%f %f\n", tmp.x, tmp.y);
 	} else {
 		// display an error message if texture not found
 		nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
@@ -252,6 +274,8 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 
 	// NUKLEAR BUG. 
 	img_rect.y -= img_rect.h;
+
+	//printf("%f %f %f %f\n", img_rect.x, img_rect.y, img_rect.w, img_rect.h);
 
 	// handle mouse behaviors in editor
 	if (nk_input_is_mouse_hovering_rect(&gui_menu->ctx->input, img_rect)) {
