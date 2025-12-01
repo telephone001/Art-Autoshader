@@ -3,35 +3,49 @@
 
 #include "gui.h"
 
-/// @brief creates a frame buffer object in the gui_menu based on the current window size.
-/// @param gui_menu the gui menu that you want to change
-/// @param wnd the window that you want to edit
-/// @return negative val on error
-static int nuklear_fbo_init(MenuOptions *gui_menu, GLFWwindow *wnd)
+
+
+/// @brief creates an ecam_data given the width and height of framebuffer
+/// @param ret_ecam_data the ecam_data you want to create
+/// @param width width of framebuffer you want to make
+/// @param height height of framebuffer you want to make
+/// @return 0 on success. -1 on gl error
+int editor_cam_data_init(EditorCamData *ecam_data, int width, int height)
 {
-	GLuint fbo;
-        glGenFramebuffers(1, &fbo);
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	*ecam_data = (EditorCamData){
+	// initialized here
+        	.pos_offset = (vec2s){0},  
 
-	int width, height;
-	glfwGetWindowSize(wnd, &width, &height);
+	// will be set below
+		.fbo = 0,
+		.rbo = 0,
+		.tex = 0,
+        	.tex_nk = {0},
+	};
 
-        GLuint tex = fbo_tex_init(fbo, width, height);
-        GLuint rbo = fbo_rbo_init(fbo, width, height);
+        glGenFramebuffers(1, &ecam_data->fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, ecam_data->fbo);
 
+        ecam_data->tex = fbo_tex_init(ecam_data->fbo, width, height);
+        ecam_data->rbo = fbo_rbo_init(ecam_data->fbo, width, height);
+
+	// Error checking
 	// we cant use the ret assert here because we gotta free the gui menu first.
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-		glDeleteFramebuffers(1, &fbo);
-		glDeleteRenderbuffers(1, &rbo);
-		glDeleteTextures(1, &tex);
+		glDeleteFramebuffers(1, &ecam_data->fbo);
+		glDeleteRenderbuffers(1, &ecam_data->rbo);
+		glDeleteTextures(1, &ecam_data->tex);
 		
 		return -1;
 	} 
 
-	gui_menu->ecam_tex = tex;
+	ecam_data->tex_nk = nk_image_id(ecam_data->tex);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	return 0;
 }
+
 
 /// @brief This will do three main things:
 ///		call nk_glfw3_init(wnd, NK_GLFW3_INSTALL_CALLBACKS) to set up the gui
@@ -47,40 +61,42 @@ int nuklear_menu_init(MenuOptions *gui_menu, GLFWwindow *wnd, const char *const 
 {
 	//initialize menu and also fill in some stuff
 	*gui_menu = (MenuOptions){
-		//THESE ARE CREATED LATER IN THIS FUNCTION
+	// These are set right now
+		.state = MENU_STATE_MAIN,   
+		.font_size = font_size,
+
+	// These are created in this function below
 		.ctx = NULL, 
 		.glfw = {0},
-		
-		.state = MENU_STATE_MAIN,   
-		
-		.font_size = font_size,
+
+		.ecam_data = {0}, 
 
 		// 0 for no image selected currently (will modify when choosing an image)
 		.img_path = {0}, //empty path Put to all zeros to ensure the last one is a null terminator
+		
+	
+	// worry about these later, as they are set in other functions
 		.img_aspect_ratio = 0,
         	.img_tex = 0,	
         	.img_nk = {0},
 		.img_copied = 0,
 
 		
-		.ecam_tex = 0,
-        	.ecam_tex_nk = {0},
-        	.ecam_offset = (vec2s){0},   
 	};
 	
 	gui_menu->ctx = nk_glfw3_init(&gui_menu->glfw, wnd, NK_GLFW3_INSTALL_CALLBACKS);
-	ERR_ASSERT_RET((gui_menu->ctx != 0), -1, "nk_glfw3_init didn't work");
+	ERR_ASSERT_RET((gui_menu->ctx != 0), -1, "nk_glfw3_init didn't work\n");
 
 	strncpy(gui_menu->img_path, GUI_IMG_PATH_START, GUI_IMG_PATH_START_LEN);
 
         //set up font
         struct nk_font_atlas* atlas;
         nk_glfw3_font_stash_begin(&gui_menu->glfw, &atlas);
-	ERR_ASSERT_RET((atlas != NULL), -2, "nk_glfw3_init didn't work");
+	ERR_ASSERT_RET((atlas != NULL), -2, "nk_glfw3_init didn't work\n");
 
         //set up font. last parameter = config and 0 = default config
     	struct nk_font *font = nk_font_atlas_add_from_file(atlas, font_path, font_size, 0);
-	ERR_ASSERT_RET((font != NULL), -3, "font couldn't be added");
+	ERR_ASSERT_RET((font != NULL), -3, "font couldn't be added\n");
 
 
    	nk_glfw3_font_stash_end(&gui_menu->glfw);
@@ -89,7 +105,11 @@ int nuklear_menu_init(MenuOptions *gui_menu, GLFWwindow *wnd, const char *const 
 
 
 	
-	
+	int width, height;
+	glfwGetWindowSize(wnd, &width, &height);
+
+	int err = editor_cam_data_init(&gui_menu->ecam_data, width, height);
+	ERR_ASSERT_RET((err == 0), -4, "framebuffer gl error!\n");
 
 
 	
@@ -218,7 +238,7 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 	}
 	
 	if (gui_menu->img_tex != 0) {
-		menu_fit_img(gui_menu->ctx, gui_menu->img_nk, gui_menu->img_aspect_ratio, 30);
+		menu_fit_img(gui_menu->ctx, gui_menu->ecam_data.tex_nk, gui_menu->img_aspect_ratio, 30);
 	} else {
 		// display an error message if texture not found
 		nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
@@ -246,8 +266,8 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 		float scale = 1;
 
 		if ((pressed == GLFW_PRESS)) {
-			gui_menu->ecam_offset.x += (mouse_x - prev_mouse_x) * delta_time * scale;
-			gui_menu->ecam_offset.y += (mouse_y - prev_mouse_y) * delta_time * scale;
+			gui_menu->ecam_data.pos_offset.x += (mouse_x - prev_mouse_x) * delta_time * scale;
+			gui_menu->ecam_data.pos_offset.y += (mouse_y - prev_mouse_y) * delta_time * scale;
 		}
 
 		//printf("%f %f\n", gui_menu->ecam_offset.x, gui_menu->ecam_offset.y);

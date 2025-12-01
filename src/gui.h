@@ -46,6 +46,14 @@ typedef enum MenuState {
 } MenuState;
 
 
+typedef struct EditorCamData {
+        GLuint fbo;        // handler of the framebuffer 
+        GLuint rbo;        // a part of the fbo
+        GLuint tex;        //texture to the framebuffer of what the editor camera sees
+        struct nk_image tex_nk; //nk handler of the editor tex
+        vec2s pos_offset;     //how far away the editor camera is from the center of the image (x and y correspond with cam_right and cam_up)
+} EditorCamData;
+
 /// @brief 
 typedef struct MenuOptions {
         struct nk_context *ctx; //context for nuklear window
@@ -62,12 +70,8 @@ typedef struct MenuOptions {
         int img_copied; //boolean for if the image is being used by cam_proj_mdl (borrowed)
 
 
-        GLuint ecam_fbo;        // handler of the framebuffer 
-        GLuint ecam_rbo;        // a part of the fbo
-        GLuint ecam_tex;        //texture to the framebuffer of what the editor camera sees
-        struct nk_image ecam_tex_nk; //nk handler of the editor tex
-        vec2s ecam_offset;     //how far away the editor camera is from the center of the image (x and y correspond with cam_right and cam_up)
 
+        EditorCamData ecam_data;  // struct containing all the parts of the editor camera's data required for rendering
 
 } MenuOptions;
 
