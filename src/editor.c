@@ -495,23 +495,37 @@ int editor_init(
 
 /// @brief renders a cam_plane model
 /// @param cam_plane_rdata the renderdata of the plane you want to render.
-void cam_plane_mdl_render(RenderData *cam_plane_rdata)
+/// @param projection the projection matrix
+/// @param view the view matrix
+void cam_plane_mdl_render(RenderData *cam_plane_rdata, mat4 projection, mat4 view)
 {
         glBindVertexArray(cam_plane_rdata->vao);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, cam_plane_rdata->textures[0]);
 
 	glUseProgram(cam_plane_rdata->shader);
+
+        glUniformMatrix4fv(glGetUniformLocation(cam_plane_rdata->shader, "view"), 1, GL_FALSE, (float*)view);
+        glUniformMatrix4fv(glGetUniformLocation(cam_plane_rdata->shader, "projection"), 1, GL_FALSE, (float*)projection);
+
+
 	glDrawElements(cam_plane_rdata->primitive_type, cam_plane_rdata->indices_length, GL_UNSIGNED_INT, 0);
 }
 
 
 /// @brief simple command to render a cam_proj model. 
 /// @param cam_proj_rdata the renderdata of the thing you want to render (has to be initialized first)
-void cam_proj_mdl_render(RenderData *cam_proj_rdata)
+/// @param projection the projection matrix
+/// @param view the view matrix
+void cam_proj_mdl_render(RenderData *cam_proj_rdata, mat4 projection, mat4 view)
 {
         glBindVertexArray(cam_proj_rdata->vao);
 	glUseProgram(cam_proj_rdata->shader);
+
+        glUniformMatrix4fv(glGetUniformLocation(cam_proj_rdata->shader, "view"), 1, GL_FALSE, (float*)view);
+        glUniformMatrix4fv(glGetUniformLocation(cam_proj_rdata->shader, "projection"), 1, GL_FALSE, (float*)projection);
+
+
 	glDrawElements(cam_proj_rdata->primitive_type, cam_proj_rdata->indices_length, GL_UNSIGNED_INT, 0);
 }
 
@@ -519,11 +533,11 @@ void cam_proj_mdl_render(RenderData *cam_proj_rdata)
 /// @brief renders heightmap
 /// @param hmap_rdata the heightmap you want to render
 /// @param hmap_row_len the length of each row in the heightmap
-/// @param mat4 model the matrix model for linear algebra manipulation in heightmap
-void hmap_render(RenderData *hmap_rdata, int hmap_row_len, mat4 model)
+/// @param projection the projection matrix
+/// @param view the view matrix
+/// @param model the transformation matrix 
+void hmap_render(RenderData *hmap_rdata, int hmap_row_len, mat4 projection, mat4 view, mat4 model)
 {
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
         glBindVertexArray(hmap_rdata->vao);
         glUseProgram(hmap_rdata->shader);
 
@@ -532,20 +546,27 @@ void hmap_render(RenderData *hmap_rdata, int hmap_row_len, mat4 model)
         GLint modelLoc = glGetUniformLocation(hmap_rdata->shader, "model");
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, (float*)model);
 
-        glDrawElements(hmap_rdata->primitive_type, hmap_rdata->indices_length, GL_UNSIGNED_INT, 0);
 
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glUniformMatrix4fv(glGetUniformLocation(hmap_rdata->shader, "view"), 1, GL_FALSE, (float*)view);
+        glUniformMatrix4fv(glGetUniformLocation(hmap_rdata->shader, "projection"), 1, GL_FALSE, (float*)projection);
+
+        glDrawElements(hmap_rdata->primitive_type, hmap_rdata->indices_length, GL_UNSIGNED_INT, 0);
 }
 
 
 
-/// @brief renders the editor object
-/// @param editor 
-/// @return 
-int editor_render(Editor *editor)
+
+void editor_render(Editor *editor, int in_ecam_view, mat4 projection, mat4 view)
 {
-        cam_proj_mdl_render(&(editor->mdl_cam_proj));
-        cam_plane_mdl_render(&(editor->mdl_cam_plane));
+        if (in_ecam_view == 0) {
+                //we render yellow wireframes in freefly mode
+                cam_proj_mdl_render(&(editor->mdl_cam_proj), projection, view);
+        }
+
+        //there is no need to make an editor mode for cam plane because it is always orthogonal to the camera
+        cam_plane_mdl_render(&(editor->mdl_cam_plane), projection, view);
+
+
 
         // Heightmap model transform
         
@@ -554,10 +575,90 @@ int editor_render(Editor *editor)
         mat4 model = GLM_MAT4_IDENTITY_INIT;
         //transform_get_matrix(&editor->hmap_transform, model);
 
-        hmap_render(&(editor->hmap_rd), editor->hmap_l, model);
-
-        return 0;
+        if (in_ecam_view != 0) {
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        }
+        hmap_render(&(editor->hmap_rd), editor->hmap_l, projection, view, model);
+        if (in_ecam_view != 0) {
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        }
 }
+
+/*
+void editor_cam_render(Editor *editor, MenuOptions *gui_menu, GLFWwindow *wnd, int editor_mode) 
+{
+        cam_proj_mdl_render(&(editor->mdl_cam_proj), projection, view);
+        cam_plane_mdl_render(&(editor->mdl_cam_plane), projection, view);
+
+        // Heightmap model transform
+        
+        
+        // TODO: I put this as identity so I can compile the code. You can delete this
+        mat4 model = GLM_MAT4_IDENTITY_INIT;
+        //transform_get_matrix(&editor->hmap_transform, model);
+
+
+        //render the hmap
+
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+        glBindVertexArray(editor->hmap_rd.vao);
+
+        //IMPORTANT: use a different shader
+        glUseProgram(gui_menu->ecam_data.shader);
+
+
+        glUniform1i(glGetUniformLocation(gui_menu->ecam_data.shader, "hmap_row_len"), editor->hmap_l);
+        glUniform1i(glGetUniformLocation(gui_menu->ecam_data.shader, "editor_mode"), editor_mode);
+
+        GLint modelLoc = glGetUniformLocation(gui_menu->ecam_data.shader, "model");
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, (float*)model);
+
+        if (editor_mode != 0) {
+                mat4s offset_view;
+
+                Camera editor_cam = camera;
+                editor_cam.pos.x += gui_menu->ecam_data.pos_offset.x;
+                editor_cam.pos.y += gui_menu->ecam_data.pos_offset.y;
+                offset_view = get_cam_view(editor_cam);
+
+                glUniformMatrix4fv(
+                        glGetUniformLocation(gui_menu->ecam_data.shader, "offset_view"), 
+                        1, 
+                        GL_FALSE, 
+                        (float*)&offset_view
+                );
+
+
+                mat4s ortho_proj;
+                int width, height;
+                glfwGetFramebufferSize(wnd, &width, &height);
+
+
+                ortho_proj = glms_ortho(
+                        0.0, //left
+                        width, //right
+                        0.0, //bottom
+                        height, //top
+                        -1.0, //near
+                        1.0  //far
+                );
+
+                glUniformMatrix4fv(
+                        glGetUniformLocation(gui_menu->ecam_data.shader, "ortho_proj"), 
+                        1, 
+                        GL_FALSE, 
+                        (float*)&ortho_proj
+                );
+        }
+
+        glDrawElements(editor->hmap_rd.primitive_type, editor->hmap_rd.indices_length, GL_UNSIGNED_INT, 0);
+
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+
+}
+*/
 
 /// @brief frees the data of an editor 
 ///             (WARNING: It also deletes gltextures. If something else is using your texture, set the texture in the renderdata to 0)

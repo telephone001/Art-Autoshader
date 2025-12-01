@@ -3,10 +3,8 @@
 
 layout (location = 0) in vec2 vertex_pos;
 
-layout (std140) uniform cameraData {
-        mat4 projection;
-        mat4 view;
-};  
+uniform mat4 projection;
+uniform mat4 view;
 
 uniform vec3 light_source_pos;
 uniform vec3 cam_right;

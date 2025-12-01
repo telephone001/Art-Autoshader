@@ -2,11 +2,8 @@
 
 layout (location = 0) in vec3 a_pos;
 
-layout (std140) uniform cameraData {
-        mat4 projection;
-        mat4 view;
-};    
-
+uniform mat4 projection;
+uniform mat4 view;
 
 void main()
 {

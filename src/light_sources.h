@@ -41,8 +41,10 @@ typedef struct LightSourcesData {
 
 /// @brief renders all the lightsources. It will bind all the textures and then render light source one by one (TODO: would be better with instancing)
 /// @param light_sources the struct containing all light sources
+/// @param projection the projection matrix
+/// @param view the view matrix
 /// @return 0 on error
-int light_sources_render(LightSourcesData *light_sources);
+int light_sources_render(LightSourcesData *light_sources, mat4 projection, mat4 view);
 
 /// @brief initializes the renderdata for the light sources struct
 /// @param light_sources_rd the light sources renderdata

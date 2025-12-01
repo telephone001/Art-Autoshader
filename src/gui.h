@@ -80,7 +80,6 @@ typedef struct MenuOptions {
 
 
 
-
 /// @brief This will do three main things:
 ///		call nk_glfw3_init(wnd, NK_GLFW3_INSTALL_CALLBACKS) to set up the gui
 ///		fill in the struct containing menu data
@@ -91,9 +90,23 @@ typedef struct MenuOptions {
 /// @param font_path the path to the font you want to choose for the gui
 /// @param font_size how big the letters and textboxes should be in the gui
 /// @return 
-int nuklear_menu_init(MenuOptions *gui_menu, GLFWwindow *wnd, const char *const font_path, int font_size);
+int nuklear_menu_init(
+	MenuOptions *gui_menu, 
+	GLFWwindow *wnd, 
+	const char *const font_path, 
+	int font_size
+);
 
+/// @brief frees the editor cam data
+/// @param ecam_data  editor cam data
+void editor_cam_data_free(EditorCamData *ecam_data);
 
+/// @brief creates an ecam_data given the width and height of framebuffer
+/// @param ret_ecam_data the ecam_data you want to create
+/// @param width pixel width of framebuffer you want to make
+/// @param height pixel height of framebuffer you want to make
+/// @return 0 on success. -1 on gl error
+int editor_cam_data_init(EditorCamData *ecam_data, int width, int height);
 
 
 /// @brief This is a drawcall for the gui menu

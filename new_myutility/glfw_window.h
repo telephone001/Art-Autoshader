@@ -31,21 +31,15 @@ typedef struct Camera {
 	float speed;
 } Camera;
 
-// this is the layout for the uniform buffer you can use
-/*
-layout (std140) uniform cameraData {
-        mat4 projection;
-        mat4 view;
-};    
-*/
 
-GLuint uniform_buffer_setup();
-
-mat4s get_cam_view(Camera camera);
-
-void ubo_cam_view_edit();
-
-void framebuffer_size_callback(GLFWwindow *const window, int width, int height);
+/**
+ * @brief calculates the cam view from camera
+ * 	  used when multiple things need the cam_view
+ * 
+ * @param camera camera struct
+ * @return mat4s the cam view
+ */
+void get_cam_view(Camera camera, mat4 cam_view);
 
 void mouse_callback(GLFWwindow *window, double x_pos, double y_pos);
 

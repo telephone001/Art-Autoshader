@@ -2,14 +2,12 @@
 
 layout(location = 0) in float height;
 
-layout (std140) uniform cameraData {
-        mat4 projection;
-        mat4 view;
-};    
-
 //transformation matrix
 uniform mat4 model;
 uniform int hmap_row_len;
+
+uniform mat4 view;
+uniform mat4 projection;
 
 // this will be sent to the fragment shader to color the heightmap for now
 out float f_height;

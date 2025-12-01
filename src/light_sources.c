@@ -5,8 +5,10 @@ extern Camera camera;
 
 /// @brief renders all the lightsources. It will bind all the textures and then render light source one by one (TODO: would be better with instancing)
 /// @param light_sources the struct containing all light sources
+/// @param projection the projection matrix
+/// @param view the view matrix
 /// @return 0 on error
-int light_sources_render(LightSourcesData *light_sources)
+int light_sources_render(LightSourcesData *light_sources, mat4 projection, mat4 view)
 {
 
         glUseProgram(light_sources->rd.shader);
@@ -30,6 +32,10 @@ int light_sources_render(LightSourcesData *light_sources)
                 1, 
                 camera.pos.raw
         );
+
+        glUniformMatrix4fv(glGetUniformLocation(light_sources->rd.shader, "view"), 1, GL_FALSE, (float*)view);
+        glUniformMatrix4fv(glGetUniformLocation(light_sources->rd.shader, "projection"), 1, GL_FALSE, (float*)projection);
+
 
         //bind 2 texture units TODO:
         glActiveTexture(GL_TEXTURE0);

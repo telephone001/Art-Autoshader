@@ -17,43 +17,18 @@ Camera camera = {
 int in_menu = 1;
 
 /**
- * @brief sets up a uniform buffer for the camera defined above
- * 	  used when you want to use the ubo for camera variables
- * 	  Currently consists of a camera view matrix and a projection matrix
- *
- */
-GLuint uniform_buffer_setup()
-{
-	GLuint ubo;
-	glGenBuffers(1, &ubo);
-	glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-	glBindBufferRange(GL_UNIFORM_BUFFER, 0, ubo, 0, 2 * sizeof(mat4));
-	glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(mat4), NULL, GL_STATIC_DRAW);
-}
-
-/**
  * @brief calculates the cam view from camera
  * 	  used when multiple things need the cam_view
  * 
  * @param camera camera struct
  * @return mat4s the cam view
  */
-mat4s get_cam_view(Camera camera)
+void get_cam_view(Camera camera, mat4 cam_view)
 {
-	mat4s cam_view;
-	vec3s view_center;
-	view_center = glms_vec3_add(camera.pos, camera.front);
-	return glms_lookat(camera.pos, view_center, camera.up);
-}
-
-/**
- * @brief buffers the camera view to the camera uniform buffer provided in the glfw_window file.
- * 	  used for shortening the code for sending view to the ubo.
- */
-void ubo_cam_view_edit()
-{
-	mat4s cam_view = get_cam_view(camera);
-        glBufferSubData(GL_UNIFORM_BUFFER, sizeof(mat4s), sizeof(mat4s), &cam_view);
+	vec3 view_center;
+	glm_vec3_add(camera.pos.raw, camera.front.raw, view_center);
+	
+	glm_lookat(camera.pos.raw, view_center, camera.up.raw, cam_view);
 }
 
 /**
@@ -140,21 +115,6 @@ void mouse_callback(GLFWwindow *window, double x_pos, double y_pos)
 	camera.right  = glms_normalize(glms_cross(camera.front, camera.up));
 }
 
-
-/// @brief will make sure the viewport matches the new dimensions when resized and also buffers the projection matrix to the uniform buffer
-/// @param window window of glfw program
-/// @param width width of screen
-/// @param height height of screen
-void framebuffer_size_callback(GLFWwindow *const window, int width, int height)
-{
-	//change the projection matrix of the camera uniform buffer
-	mat4s cam_projection = glms_perspective(glm_rad(45.0f), (double)width / (double)height, 0.1f, 4000.0f);
-	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(mat4), (float*)&cam_projection);
-
-	//resize the viewport
-	glViewport(0, 0, width, height);
-}
-
 GLFWwindow *glfw_setup(int major_version, int minor_version, 
 		       unsigned int screen_width, unsigned int screen_height, 
 		       const char *const window_name)
@@ -184,7 +144,7 @@ GLFWwindow *glfw_setup(int major_version, int minor_version,
 
 
 	//callbacks
-	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	//glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	glfwSetCursorPosCallback(window, mouse_callback);
 
 

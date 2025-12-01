@@ -36,6 +36,9 @@ extern int in_menu;   //menu status
 
 int debug_thing = 0; // TODO  REMOVE IN FINAL PRODUCT
 
+mat4 flycam_projection;
+mat4 flycam_view;
+
 /// @brief 
 void opengl_settings_init()
 {
@@ -43,13 +46,8 @@ void opengl_settings_init()
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
 
-        //sets up camera matrix
-        uniform_buffer_setup();
-
         //static camera data
-	mat4 cam_projection;
-	glm_perspective(glm_rad(FOVY), (float)SCR_LENGTH / SCR_HEIGHT, NEAR, FAR, cam_projection);
-	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(mat4), cam_projection);
+	glm_perspective(glm_rad(FOVY), (float)SCR_LENGTH / SCR_HEIGHT, NEAR, FAR, flycam_projection);
         
         //set background color
         glClearColor(0.1, 0.2, 0.3, 1.0);
@@ -157,6 +155,19 @@ void key_callback_menu_switching(
 }
 
 
+/// @brief will make sure the viewport matches the new dimensions when resized and updates the projection matrix
+/// @param window window of glfw program
+/// @param width width of screen
+/// @param height height of screen
+void framebuffer_size_callback(GLFWwindow *const window, int width, int height)
+{
+	//change the projection matrix
+	glm_perspective(glm_rad(FOVY), (double)width / (double)height, NEAR, FAR, flycam_projection);
+
+	//resize the viewport
+	glViewport(0, 0, width, height);
+}
+
 
 int main() 
 {
@@ -169,16 +180,6 @@ int main()
 	    	return -1;
 
         opengl_settings_init();
-
-
-        MenuOptions gui_menu;
-        int err = nuklear_menu_init(&gui_menu, wnd, "fonts/american-typewriter.ttf", 22); 
-        ERR_ASSERT_RET((err >= 0), -1, "nuklear window could not be created");
-
-        // this is required AFTER nuklear_menu_init because it uses the callbacks
-        glfwSetKeyCallback(wnd, key_callback_menu_switching);
-
-
 
         GLuint shader_cam_proj = create_shader_program(
                 "shaders/cam_proj.vert",
@@ -212,13 +213,14 @@ int main()
                 NULL
         );	
 
-        GLuint shader_editor_view = create_shader_program(
-                "shaders/editor_view.vert",
-                "shaders/editor_view.frag", 
-                NULL, 
-                NULL, 
-                NULL
-        );
+
+        MenuOptions gui_menu;
+        int err = nuklear_menu_init(&gui_menu, wnd, "fonts/american-typewriter.ttf", 22); 
+        ERR_ASSERT_RET((err >= 0), -1, "nuklear window could not be created");
+
+        // this is required AFTER nuklear_menu_init because it uses the callbacks
+        glfwSetKeyCallback(wnd, key_callback_menu_switching);
+
 
         LightSourcesData light_sources_data = {0};
 
@@ -249,8 +251,7 @@ int main()
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
                 //edit camera to look in correct direction
-		mat4s cam_view = get_cam_view(camera);
-		glBufferSubData(GL_UNIFORM_BUFFER, sizeof(mat4s), sizeof(mat4s), (float*)&cam_view);
+		get_cam_view(camera, flycam_view);
 		
 
                 // If debug thing is 1, we make an editor
@@ -322,7 +323,7 @@ int main()
                 glDepthFunc(GL_LESS);
                 for (int i = 0; i < MAX_EDITORS; i++) {
                         if (editors[i].mdl_cam_proj.vao != 0 ) {
-                                editor_render(&(editors[i]));
+                                editor_render(&(editors[i]), 0, flycam_projection, flycam_view);
                         }
                 }
 
@@ -334,7 +335,7 @@ int main()
 
                 for (int i = 0; i < MAX_EDITORS; i++) {
                         if (editors[i].mdl_cam_proj.vao != 0 ) {
-                                editor_render(&(editors[i]));
+                                editor_render(&(editors[i]), 1, flycam_projection, flycam_view);
                         }
                 }
 
@@ -344,7 +345,7 @@ int main()
 
                 
                 // REMEMBER THAT THIS CAN RETURN AN ERROR
-                light_sources_render(&light_sources_data);
+                light_sources_render(&light_sources_data, flycam_projection, flycam_view);
 
 
 		if (in_menu) {

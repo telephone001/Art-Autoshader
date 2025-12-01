@@ -61,7 +61,6 @@ void editor_cam_data_free(EditorCamData *ecam_data)
 
 	glDeleteRenderbuffers(1, &ecam_data->rbo);
 	ecam_data->rbo = 0;
-
 }
 
 
@@ -75,7 +74,12 @@ void editor_cam_data_free(EditorCamData *ecam_data)
 /// @param font_path the path to the font you want to choose for the gui
 /// @param font_size how big the letters and textboxes should be in the gui
 /// @return 
-int nuklear_menu_init(MenuOptions *gui_menu, GLFWwindow *wnd, const char *const font_path, int font_size) 
+int nuklear_menu_init(
+	MenuOptions *gui_menu, 
+	GLFWwindow *wnd, 
+	const char *const font_path, 
+	int font_size
+) 
 {
 	//initialize menu and also fill in some stuff
 	*gui_menu = (MenuOptions){
@@ -276,23 +280,7 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 		gui_menu->state = MENU_STATE_MAIN;
 	}
 	
-
-
-	if (gui_menu->ecam_data.tex != 0) {
-		menu_fit_img(
-			gui_menu->ctx, 
-			gui_menu->ecam_data.tex_nk, 
-			gui_menu->ecam_data.width / gui_menu->ecam_data.height, 
-			30
-		);
-	} else {
-		// display an error message if texture not found
-		nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
-		nk_style_push_color(gui_menu->ctx, &gui_menu->ctx->style.text.color, nk_rgb(255, 0, 0));
-		nk_label(gui_menu->ctx, "editor not selected.", NK_TEXT_LEFT);
-		nk_style_pop_color(gui_menu->ctx);
-	}
-
+		
 	int width, height;
 	glfwGetWindowSize(wnd, &width, &height);
 
@@ -301,6 +289,25 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 		editor_cam_data_free(&gui_menu->ecam_data);
 		//TODO remember the error value here
 		editor_cam_data_init(&gui_menu->ecam_data, width, height);
+
+		gui_menu->ecam_data.width = width;
+		gui_menu->ecam_data.height = height;
+	}
+
+
+	if (gui_menu->ecam_data.tex != 0) {
+		menu_fit_img(
+			gui_menu->ctx, 
+			gui_menu->ecam_data.tex_nk, 
+			(float)gui_menu->ecam_data.width / (float)gui_menu->ecam_data.height, 
+			30
+		);
+	} else {
+		// display an error message if texture not found
+		nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
+		nk_style_push_color(gui_menu->ctx, &gui_menu->ctx->style.text.color, nk_rgb(255, 0, 0));
+		nk_label(gui_menu->ctx, "editor not selected.", NK_TEXT_LEFT);
+		nk_style_pop_color(gui_menu->ctx);
 	}
 
 	// Get the rectangle of the img (prev widget)
