@@ -495,15 +495,18 @@ int editor_init(
 
 /// @brief renders a cam_plane model
 /// @param cam_plane_rdata the renderdata of the plane you want to render.
+/// @param in_ecam_view
 /// @param projection the projection matrix
 /// @param view the view matrix
-void cam_plane_mdl_render(RenderData *cam_plane_rdata, mat4 projection, mat4 view)
+void cam_plane_mdl_render(RenderData *cam_plane_rdata, int in_ecam_view, mat4 projection, mat4 view)
 {
         glBindVertexArray(cam_plane_rdata->vao);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, cam_plane_rdata->textures[0]);
 
 	glUseProgram(cam_plane_rdata->shader);
+
+        glUniform1i(glGetUniformLocation(cam_plane_rdata->shader, "in_ecam_view"), in_ecam_view);
 
         glUniformMatrix4fv(glGetUniformLocation(cam_plane_rdata->shader, "view"), 1, GL_FALSE, (float*)view);
         glUniformMatrix4fv(glGetUniformLocation(cam_plane_rdata->shader, "projection"), 1, GL_FALSE, (float*)projection);
@@ -533,15 +536,18 @@ void cam_proj_mdl_render(RenderData *cam_proj_rdata, mat4 projection, mat4 view)
 /// @brief renders heightmap
 /// @param hmap_rdata the heightmap you want to render
 /// @param hmap_row_len the length of each row in the heightmap
+/// @param in_ecam_view if we are rendering inside 
 /// @param projection the projection matrix
 /// @param view the view matrix
 /// @param model the transformation matrix 
-void hmap_render(RenderData *hmap_rdata, int hmap_row_len, mat4 projection, mat4 view, mat4 model)
+void hmap_render(RenderData *hmap_rdata, int hmap_row_len, int in_ecam_view, mat4 projection, mat4 view, mat4 model)
 {
         glBindVertexArray(hmap_rdata->vao);
         glUseProgram(hmap_rdata->shader);
 
         glUniform1i(glGetUniformLocation(hmap_rdata->shader, "hmap_row_len"), hmap_row_len);
+
+        glUniform1i(glGetUniformLocation(hmap_rdata->shader, "in_ecam_view"), in_ecam_view);
 
         GLint modelLoc = glGetUniformLocation(hmap_rdata->shader, "model");
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, (float*)model);
@@ -564,9 +570,7 @@ void editor_render(Editor *editor, int in_ecam_view, mat4 projection, mat4 view)
         }
 
         //there is no need to make an editor mode for cam plane because it is always orthogonal to the camera
-        cam_plane_mdl_render(&(editor->mdl_cam_plane), projection, view);
-
-
+        cam_plane_mdl_render(&(editor->mdl_cam_plane), in_ecam_view, projection, view);
 
         // Heightmap model transform
         
@@ -578,7 +582,7 @@ void editor_render(Editor *editor, int in_ecam_view, mat4 projection, mat4 view)
         if (in_ecam_view != 0) {
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         }
-        hmap_render(&(editor->hmap_rd), editor->hmap_l, projection, view, model);
+        hmap_render(&(editor->hmap_rd), editor->hmap_l, in_ecam_view, projection, view, model);
         if (in_ecam_view != 0) {
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }

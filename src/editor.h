@@ -51,9 +51,10 @@ int cam_proj_mdl_init(
 
 /// @brief renders a cam_plane model
 /// @param cam_plane_rdata the renderdata of the plane you want to render.
+/// @param in_ecam_view
 /// @param projection the projection matrix
 /// @param view the view matrix
-void cam_plane_mdl_render(RenderData *cam_plane_rdata, mat4 projection, mat4 view);
+void cam_plane_mdl_render(RenderData *cam_plane_rdata, int in_ecam_view, mat4 projection, mat4 view);
 
 /// @brief simple command to render a cam_proj model. 
 /// @param cam_proj_rdata the renderdata of the thing you want to render (has to be initialized first)
@@ -64,10 +65,11 @@ void cam_proj_mdl_render(RenderData *cam_proj_rdata, mat4 projection, mat4 view)
 /// @brief renders heightmap
 /// @param hmap_rdata the heightmap you want to render
 /// @param hmap_row_len the length of each row in the heightmap
+/// @param in_ecam_view if we are rendering inside 
 /// @param projection the projection matrix
 /// @param view the view matrix
 /// @param model the transformation matrix 
-void hmap_render(RenderData *hmap_rdata, int hmap_row_len, mat4 projection, mat4 view, mat4 model);
+void hmap_render(RenderData *hmap_rdata, int hmap_row_len, int in_ecam_view, mat4 projection, mat4 view, mat4 model);
 
 /// @brief uses an initialized hmap to build the heightmap rd, mallocing an indices array.
 ///             and the indices will be filled out
