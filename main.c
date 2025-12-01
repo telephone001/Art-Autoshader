@@ -212,6 +212,14 @@ int main()
                 NULL
         );	
 
+        GLuint shader_editor_view = create_shader_program(
+                "shaders/editor_view.vert",
+                "shaders/editor_view.frag", 
+                NULL, 
+                NULL, 
+                NULL
+        );
+
         LightSourcesData light_sources_data = {0};
 
         GLuint point_light_tex, directional_light_tex;

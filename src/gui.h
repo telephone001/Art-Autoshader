@@ -4,6 +4,7 @@
 #include "cglm/struct.h"
 #include "opengl_util.h"
 #include "opengl_texture_util.h"
+#include "opengl_rbo_util.h"
 #include "general/debug.h"
 
 #include <GLFW/glfw3.h>
@@ -61,6 +62,8 @@ typedef struct MenuOptions {
         int img_copied; //boolean for if the image is being used by cam_proj_mdl (borrowed)
 
 
+        GLuint ecam_fbo;        // handler of the framebuffer 
+        GLuint ecam_rbo;        // a part of the fbo
         GLuint ecam_tex;        //texture to the framebuffer of what the editor camera sees
         struct nk_image ecam_tex_nk; //nk handler of the editor tex
         vec2s ecam_offset;     //how far away the editor camera is from the center of the image (x and y correspond with cam_right and cam_up)

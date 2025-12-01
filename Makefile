@@ -20,7 +20,7 @@ endif
 
 
 #object files
-util_files = opengl_util glfw_window general/debug opengl_texture_util
+util_files = opengl_util glfw_window general/debug opengl_texture_util opengl_rbo_util
 util_paths = $(addprefix $(myutil)/,$(util_files))
 util_paths_obj = $(addsuffix .o,$(util_paths))
 

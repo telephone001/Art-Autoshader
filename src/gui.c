@@ -3,6 +3,36 @@
 
 #include "gui.h"
 
+/// @brief creates a frame buffer object in the gui_menu based on the current window size.
+/// @param gui_menu the gui menu that you want to change
+/// @param wnd the window that you want to edit
+/// @return negative val on error
+static int nuklear_fbo_init(MenuOptions *gui_menu, GLFWwindow *wnd)
+{
+	GLuint fbo;
+        glGenFramebuffers(1, &fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+	int width, height;
+	glfwGetWindowSize(wnd, &width, &height);
+
+        GLuint tex = fbo_tex_init(fbo, width, height);
+        GLuint rbo = fbo_rbo_init(fbo, width, height);
+
+	// we cant use the ret assert here because we gotta free the gui menu first.
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+		glDeleteFramebuffers(1, &fbo);
+		glDeleteRenderbuffers(1, &rbo);
+		glDeleteTextures(1, &tex);
+		
+		return -1;
+	} 
+
+	gui_menu->ecam_tex = tex;
+
+	return 0;
+}
+
 /// @brief This will do three main things:
 ///		call nk_glfw3_init(wnd, NK_GLFW3_INSTALL_CALLBACKS) to set up the gui
 ///		fill in the struct containing menu data
@@ -32,13 +62,13 @@ int nuklear_menu_init(MenuOptions *gui_menu, GLFWwindow *wnd, const char *const 
         	.img_nk = {0},
 		.img_copied = 0,
 
+		
 		.ecam_tex = 0,
         	.ecam_tex_nk = {0},
         	.ecam_offset = (vec2s){0},   
 	};
 	
 	gui_menu->ctx = nk_glfw3_init(&gui_menu->glfw, wnd, NK_GLFW3_INSTALL_CALLBACKS);
-
 	ERR_ASSERT_RET((gui_menu->ctx != 0), -1, "nk_glfw3_init didn't work");
 
 	strncpy(gui_menu->img_path, GUI_IMG_PATH_START, GUI_IMG_PATH_START_LEN);
@@ -58,6 +88,8 @@ int nuklear_menu_init(MenuOptions *gui_menu, GLFWwindow *wnd, const char *const 
 	nk_style_set_font(gui_menu->ctx, &font->handle);
 
 
+	
+	
 
 
 	
@@ -71,8 +103,9 @@ int nuklear_menu_init(MenuOptions *gui_menu, GLFWwindow *wnd, const char *const 
 /// @brief dynamically fits a nk image into the reminaing space of a gui menu (you can leave a margin on the bottom)
 /// @param ctx the context of the nuklear menu
 /// @param img the nuklear image
+/// @param margin how much height space should I leave for the rest of the widgits in the gui
 /// @param aspect_ratio the aspect ratio of the image
-static void menu_fit_img(struct nk_context *ctx, struct nk_image img, float aspect_ratio)
+static void menu_fit_img(struct nk_context *ctx, struct nk_image img, float aspect_ratio, float margin)
 {
 	//total size of the gui menu
 	struct nk_rect total = nk_window_get_content_region(ctx);
@@ -82,7 +115,7 @@ static void menu_fit_img(struct nk_context *ctx, struct nk_image img, float aspe
 
 	float w,h;
 	//TODO: 120 is used to fit the image into a bound. (used to calculate remaining space in gui)
-	img_rect_fit(&w, &h, aspect_ratio, total.w, total.h - last.y);
+	img_rect_fit(&w, &h, aspect_ratio, total.w, total.h - margin);
 
 	//these determine image dimensions
 	nk_layout_row_begin(ctx, NK_STATIC, h, 1); // controls height
@@ -157,7 +190,7 @@ static int state_img_select_render(MenuOptions *const gui_menu)
 		nk_style_pop_color(gui_menu->ctx);
 	} else if (gui_menu->img_tex != 0) {
 		//otherwise, display the image
-		menu_fit_img(gui_menu->ctx, gui_menu->img_nk, gui_menu->img_aspect_ratio);
+		menu_fit_img(gui_menu->ctx, gui_menu->img_nk, gui_menu->img_aspect_ratio, 120);
 	}
 
 	return 0;
@@ -185,7 +218,7 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 	}
 	
 	if (gui_menu->img_tex != 0) {
-		menu_fit_img(gui_menu->ctx, gui_menu->img_nk, gui_menu->img_aspect_ratio);
+		menu_fit_img(gui_menu->ctx, gui_menu->img_nk, gui_menu->img_aspect_ratio, 30);
 	} else {
 		// display an error message if texture not found
 		nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
@@ -194,26 +227,35 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 		nk_style_pop_color(gui_menu->ctx);
 	}
 
+	// Get the rectangle of the img (prev widget)
+	struct nk_rect img_rect = nk_widget_bounds(gui_menu->ctx);
 
-	double mouse_x, mouse_y;
-	static double prev_mouse_x, prev_mouse_y;
+	// NUKLEAR BUG. 
+	img_rect.y -= img_rect.h;
 
-	glfwGetCursorPos(wnd, &mouse_x, &mouse_y);
+	// handle mouse behaviors in editor
+	if (nk_input_is_mouse_hovering_rect(&gui_menu->ctx->input, img_rect)) {
+		double mouse_x, mouse_y;
+		static double prev_mouse_x, prev_mouse_y;
 
-	int pressed = glfwGetMouseButton(wnd, GLFW_MOUSE_BUTTON_LEFT);
+		glfwGetCursorPos(wnd, &mouse_x, &mouse_y);
 
-	//TODO: change the scale
-	float scale = 1;
+		int pressed = glfwGetMouseButton(wnd, GLFW_MOUSE_BUTTON_LEFT);
 
-	if ((pressed == GLFW_PRESS)) {
-		gui_menu->ecam_offset.x += (mouse_x - prev_mouse_x) * delta_time * scale;
-		gui_menu->ecam_offset.y += (mouse_y - prev_mouse_y) * delta_time * scale;
+		//TODO: change the scale
+		float scale = 1;
+
+		if ((pressed == GLFW_PRESS)) {
+			gui_menu->ecam_offset.x += (mouse_x - prev_mouse_x) * delta_time * scale;
+			gui_menu->ecam_offset.y += (mouse_y - prev_mouse_y) * delta_time * scale;
+		}
+
+		//printf("%f %f\n", gui_menu->ecam_offset.x, gui_menu->ecam_offset.y);
+
+		prev_mouse_x = mouse_x;
+		prev_mouse_y = mouse_y;
 	}
 
-	printf("%f %f\n", gui_menu->ecam_offset.x, gui_menu->ecam_offset.y);
-
-	prev_mouse_x = mouse_x;
-	prev_mouse_y = mouse_y;
 }
 
 
