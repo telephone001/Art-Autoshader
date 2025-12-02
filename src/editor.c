@@ -374,7 +374,7 @@ int heightmap_mdl_init(
                 //These will be filled out with the heightmap_indices_create
 	        .indices = NULL, 
 	        .indices_stride = 3,
-	        .indices_length = -1,
+	        .indices_length = 0,
 
                 //No textures!
 	        .textures = NULL, 
@@ -629,9 +629,9 @@ void hmap_edit_sinc(Editor *editor)
                         float m = 10;
                         
                         if (a==0 && b==0) {
-                                editor->hmap_rd.vertices[i * editor->hmap_w + j] = m;
+                                editor->hmap[i * editor->hmap_w + j] = m;
                         } else {
-                                editor->hmap_rd.vertices[i * editor->hmap_w + j] = m * sin(c) / c;
+                                editor->hmap[i * editor->hmap_w + j] = m * sin(c) / c;
                         }
                 }
         }
@@ -648,3 +648,27 @@ void hmap_edit_sinc(Editor *editor)
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
+void hmap_edit_edbert(Editor *editor)
+{
+        
+        for (int z = 0; z < editor->hmap_l; z++) {
+                for (int x = 0; x < editor->hmap_w; x++) {
+                        float dx = x - editor->hmap_w / 2;
+                        float dz = z - editor->hmap_l / 2;
+                        float dist = sqrt(dx * dx + dz * dz);
+                        editor->hmap[z * editor->hmap_w + x] = 10.0 * exp(-(dist / 80.0));
+                }
+        }
+        
+        
+        glBindBuffer(GL_ARRAY_BUFFER, editor->hmap_rd.vbo);
+
+        glBufferSubData(
+                GL_ARRAY_BUFFER,
+                0,
+                editor->hmap_rd.vertices_length * sizeof(float),
+                editor->hmap_rd.vertices
+        );
+        
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+}

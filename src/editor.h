@@ -120,7 +120,7 @@ void editor_free(Editor *editor);
 void hmap_edit_sinc(Editor *editor);
 
 
-
+void hmap_edit_edbert(Editor *editor);
 
 
 
