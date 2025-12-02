@@ -1,4 +1,5 @@
 CC = gcc
+LINKER = g++
 
 myutil := ./new_myutility
 lib := ./lib
@@ -28,11 +29,16 @@ local_files = gui editor light_sources transform
 local_paths = $(addprefix src/,$(local_files))
 local_paths_obj = $(addsuffix .o,$(local_paths))
 
-CFLAGS = -Wall $(util_paths_obj) $(local_paths_obj) $(lib)/glad.o $(INCLUDE_ALL_DEP) -I$(myutil) -L$(lib) $(libraries) -Wno-missing-braces
+LDFLAGS = $(util_paths_obj) $(local_paths_obj) $(lib)/glad.o
+CFLAGS = -Wall $(INCLUDE_ALL_DEP) -I$(myutil) -L$(lib) $(libraries) -Wno-missing-braces
 
 
-all: main.c $(util_paths_obj) $(local_paths_obj) $(lib)/glad.o
-	$(CC) main.c $(CFLAGS) -o output && ./output.exe
+# link in C++
+all: main.o
+	$(LINKER) main.o $(LDFLAGS) $(CFLAGS) -o output && ./output.exe
+
+main.o: main.c $(util_paths_obj) $(local_paths_obj) $(lib)/glad.o
+	$(CC) -c main.c $(CFLAGS) -o main.o
 
 #for compiling the glad library
 $(lib)/glad.o: $(lib)/glad/src/glad.c
@@ -49,9 +55,11 @@ clean_util:
 	rm -f $(util_paths_obj) $(util_paths_obj:.o=.d)
 clean_lib:
 	rm -f $(lib)/glad.o
+clean_mainio:
+	rm -f main.o
 
 
-clean: clean_util clean_lib clean_locals
+clean: clean_util clean_lib clean_locals clean_mainio
 	echo successfully cleaned!
 
 
