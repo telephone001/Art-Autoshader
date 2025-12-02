@@ -120,7 +120,25 @@ void editor_free(Editor *editor);
 void hmap_edit_sinc(Editor *editor);
 
 
+<<<<<<< HEAD
+//
+// Simple accessors for standalone CPU/CUDA heightmap usage
+//
+
+/// @brief Returns pointer to heightmap array
+/// @note The returned pointer is owned by Editor. Do NOT free it.
+float* editor_get_heightmap(Editor* editor);
+
+/// @brief Returns heightmap width (number of X samples)
+int editor_get_width(Editor* editor);
+
+/// @brief Returns heightmap length (number of Z samples)
+int editor_get_height(Editor* editor);
+
+
+=======
 void hmap_edit_edbert(Editor *editor);
+>>>>>>> 7b4006c867058a2dd1841f9563954468d7175f2a
 
 
 
