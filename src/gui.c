@@ -17,6 +17,7 @@ int editor_cam_data_init(EditorCamData *ecam_data, int width, int height)
         	.pos_offset = (vec2s){0},  
 		.width = width,
 		.height = height,
+		.in_perspective = 0,
 
 	// will be set below
 		.fbo = 0,
@@ -285,7 +286,9 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 		gui_menu->ecam_data.pos_offset.x = 0;
 		gui_menu->ecam_data.pos_offset.y = 0;
 	}
-	
+
+	nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
+	nk_checkbox_label(gui_menu->ctx, "perspective", &gui_menu->ecam_data.in_perspective);
 		
 	int width, height;
 	glfwGetWindowSize(wnd, &width, &height);
@@ -306,7 +309,7 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 			gui_menu->ctx, 
 			gui_menu->ecam_data.tex_nk, 
 			(float)gui_menu->ecam_data.width / (float)gui_menu->ecam_data.height, 
-			70
+			100
 		);
 	} else {
 		// display an error message if texture not found

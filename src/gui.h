@@ -54,6 +54,8 @@ typedef struct EditorCamData {
         vec2s pos_offset;     //how far away the editor camera is from the center of the image (x and y correspond with cam_right and cam_up)
         int width;    // the pixel width of the fbo
         int height;   //the pixel height of the fbo
+
+        int in_perspective;     // 1 if we enable perspective on ecam view
 } EditorCamData;
 
 /// @brief 
@@ -74,7 +76,6 @@ typedef struct MenuOptions {
 
 
         EditorCamData ecam_data;  // struct containing all the parts of the editor camera's data required for rendering
-
 } MenuOptions;
 
 

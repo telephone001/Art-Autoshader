@@ -379,9 +379,16 @@ int main()
 
                 get_cam_view(editor_cam, offset_view); 
 
+                
+
                 for (int i = 0; i < MAX_EDITORS; i++) {
                         if (editors[i].mdl_cam_proj.vao != 0 ) {
-                                editor_render(&(editors[i]), 1, ortho_proj, offset_view);
+                                editor_render(
+                                        &(editors[i]), 
+                                        1, 
+                                        (gui_menu.ecam_data.in_perspective) ? flycam_projection : ortho_proj, 
+                                        offset_view
+                                );
                         }
                 }
 
