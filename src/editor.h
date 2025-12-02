@@ -119,8 +119,10 @@ void editor_free(Editor *editor);
 /// @param editor the editor to change its heightmap
 void hmap_edit_sinc(Editor *editor);
 
+/// @brief This is the same heightmap thing from the parallel implementation
+/// @param editor the editor you want to put this heightmap onto
+void hmap_edit_test1(Editor *editor);
 
-<<<<<<< HEAD
 //
 // Simple accessors for standalone CPU/CUDA heightmap usage
 //
@@ -136,9 +138,6 @@ int editor_get_width(Editor* editor);
 int editor_get_height(Editor* editor);
 
 
-=======
-void hmap_edit_edbert(Editor *editor);
->>>>>>> 7b4006c867058a2dd1841f9563954468d7175f2a
 
 
 

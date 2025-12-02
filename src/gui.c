@@ -274,6 +274,8 @@ static void state_main_render(MenuOptions *const gui_menu)
 }
 
 
+
+
 static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta_time, GLFWwindow *wnd)
 {
 	nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
@@ -287,8 +289,15 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 		gui_menu->ecam_data.pos_offset.y = 0;
 	}
 
-	nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
+	nk_layout_row_dynamic(gui_menu->ctx, 30, 3);
+
 	nk_checkbox_label(gui_menu->ctx, "perspective", &gui_menu->ecam_data.in_perspective);
+
+	//slider
+	static float drag_scale = GUI_DRAG_SCALE_MIN;
+	nk_label(gui_menu->ctx, "drag strength:", NK_TEXT_LEFT);
+	nk_slider_float(gui_menu->ctx, GUI_DRAG_SCALE_MIN, &drag_scale, GUI_DRAG_SCALE_MAX, 100);
+
 		
 	int width, height;
 	glfwGetWindowSize(wnd, &width, &height);
@@ -336,12 +345,9 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 
 		int pressed = glfwGetMouseButton(wnd, GLFW_MOUSE_BUTTON_LEFT);
 
-		//TODO: change the scale
-		float scale = 5000;
-
 		if ((pressed == GLFW_PRESS)) {
-			gui_menu->ecam_data.pos_offset.x -= (mouse_x - prev_mouse_x) * delta_time * scale / img_rect.w;
-			gui_menu->ecam_data.pos_offset.y += (mouse_y - prev_mouse_y) * delta_time * scale / img_rect.h;
+			gui_menu->ecam_data.pos_offset.x -= (mouse_x - prev_mouse_x) * delta_time * drag_scale / img_rect.w;
+			gui_menu->ecam_data.pos_offset.y += (mouse_y - prev_mouse_y) * delta_time * drag_scale / img_rect.h;
 		}
 
 		//printf("%f %f\n", gui_menu->ecam_offset.x, gui_menu->ecam_offset.y);

@@ -62,6 +62,10 @@ int light_sources_render(LightSourcesData *light_sources, mat4 projection, mat4 
                         light_sources->lights[i].type       
                 );
 
+                glUniform1f(
+                        glGetUniformLocation(light_sources->rd.shader, "scale"), 
+                        light_sources->lights[i].render_size       
+                );
                 
                 //a quad is just 2 triangles
                 glDrawArrays(GL_TRIANGLES, 0, 6);

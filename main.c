@@ -306,7 +306,7 @@ int main()
                                 100  // PLACHOLDER
                         );
                         
-                        hmap_edit_edbert(&(editors[cnt]));
+                        hmap_edit_test1(&(editors[cnt]));
 
 
                         if (err < 0) {
@@ -341,12 +341,12 @@ int main()
 
                 if (debug_thing == 3) {
                         //TODO check this error
-                        light_source_add(&light_sources_data, (LightSource){POINT, camera.pos});
+                        light_source_add(&light_sources_data, (LightSource){POINT, camera.pos, 0.5});
                         debug_thing = 0;
                 }
 
                 if (debug_thing == 4) {
-                        light_source_add(&light_sources_data, (LightSource){DIRECTIONAL, camera.pos});
+                        light_source_add(&light_sources_data, (LightSource){DIRECTIONAL, camera.pos, 1});
                         debug_thing = 0;
                 }
                 

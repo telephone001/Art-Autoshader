@@ -18,8 +18,9 @@ typedef enum LightType {
 
 // add more parameters
 typedef struct LightSource {
-        LightType type;
-        vec3s pos;
+        LightType type;         //the type of light source (used for raytracing)
+        vec3s pos;              //the position of the light source
+        float render_size;      //how big should you render a lightsource sprite
 } LightSource;
 
 enum LightSourcesVertexAttributes {

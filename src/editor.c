@@ -648,7 +648,6 @@ void hmap_edit_sinc(Editor *editor)
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-<<<<<<< HEAD
 // ----------------------------------------
 // Heightmap Accessor Functions
 // ----------------------------------------
@@ -667,8 +666,10 @@ int editor_get_height(Editor* editor)
 {
     return editor->hmap_l;
 }
-=======
-void hmap_edit_edbert(Editor *editor)
+
+/// @brief This is the same heightmap thing from the parallel implementation
+/// @param editor the editor you want to put this heightmap onto
+void hmap_edit_test1(Editor *editor)
 {
         
         for (int z = 0; z < editor->hmap_l; z++) {
@@ -692,4 +693,3 @@ void hmap_edit_edbert(Editor *editor)
         
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
->>>>>>> 7b4006c867058a2dd1841f9563954468d7175f2a

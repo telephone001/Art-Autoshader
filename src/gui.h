@@ -35,7 +35,8 @@
 // note that the gui_img_path_buff_len includes the null terminator in its length.
 #define GUI_IMG_PATH_BUFF_LEN   GUI_IMG_PATH_START_LEN + GUI_IMG_FILENAME_MAX_LEN 
 
-
+#define GUI_DRAG_SCALE_MIN 2000
+#define GUI_DRAG_SCALE_MAX 50000
 
 // If we ever want to make more states, we can. But right now there will only be one state
 typedef enum MenuState {
