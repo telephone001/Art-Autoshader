@@ -376,7 +376,7 @@ int main()
                 editor_cam.pos = glms_vec3_add(editor_cam.pos, ofr);
                 editor_cam.pos = glms_vec3_add(editor_cam.pos, ofu);
 
-                get_cam_view(camera, offset_view); 
+                get_cam_view(editor_cam, offset_view); 
 
                 for (int i = 0; i < MAX_EDITORS; i++) {
                         if (editors[i].mdl_cam_proj.vao != 0 ) {

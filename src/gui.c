@@ -279,6 +279,12 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 	if (nk_button_label(gui_menu->ctx, "back to main menu")) {
 		gui_menu->state = MENU_STATE_MAIN;
 	}
+
+	nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
+	if (nk_button_label(gui_menu->ctx, "reset offset")) {
+		gui_menu->ecam_data.pos_offset.x = 0;
+		gui_menu->ecam_data.pos_offset.y = 0;
+	}
 	
 		
 	int width, height;
@@ -300,7 +306,7 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 			gui_menu->ctx, 
 			gui_menu->ecam_data.tex_nk, 
 			(float)gui_menu->ecam_data.width / (float)gui_menu->ecam_data.height, 
-			30
+			70
 		);
 	} else {
 		// display an error message if texture not found
@@ -317,10 +323,11 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 	img_rect.y -= img_rect.h;
 
 
+	static double prev_mouse_x, prev_mouse_y;
+	double mouse_x, mouse_y;
+
 	// handle mouse behaviors in editor
 	if (nk_input_is_mouse_hovering_rect(&gui_menu->ctx->input, img_rect)) {
-		double mouse_x, mouse_y;
-		static double prev_mouse_x, prev_mouse_y;
 
 		glfwGetCursorPos(wnd, &mouse_x, &mouse_y);
 
