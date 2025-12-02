@@ -648,3 +648,21 @@ void hmap_edit_sinc(Editor *editor)
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
+// ----------------------------------------
+// Heightmap Accessor Functions
+// ----------------------------------------
+
+float* editor_get_heightmap(Editor* editor)
+{
+    return editor->hmap;
+}
+
+int editor_get_width(Editor* editor)
+{
+    return editor->hmap_w;
+}
+
+int editor_get_height(Editor* editor)
+{
+    return editor->hmap_l;
+}

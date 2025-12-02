@@ -1,7 +1,14 @@
 #include <iostream>
-#include <vector>
 #include <cmath>
 #include <chrono>
+
+// ------------------------------------------------------
+// Access editor heightmap
+// ------------------------------------------------------
+#include "Art-Autoshader/src/editor.h"   // <-- correct relative path
+
+extern Editor editor;              // Provided by engine
+
 
 // ----------------------
 // Ray Struct
@@ -10,6 +17,7 @@ struct Ray {
     float ox, oy, oz;   // origin
     float dx, dy, dz;   // direction (normalized)
 };
+
 
 // ----------------------
 // Sample Height (nearest)
@@ -30,9 +38,9 @@ static inline float sample_heightmap(
     return hmap[iz * width + ix];
 }
 
+
 // ------------------------------------------------------
-// Ray–Heightmap Intersection (CPU)
-// Returns 1 on hit, 0 on miss
+// Ray–Heightmap Intersection
 // ------------------------------------------------------
 int intersect_heightmap(
     const float* hmap,
@@ -75,61 +83,70 @@ int intersect_heightmap(
     return 0;
 }
 
+
 // ------------------------------------------------------
-// MAIN
+// MAIN V2
 // ------------------------------------------------------
-int main() {
+int main()
+{
     using namespace std::chrono;
 
-    //----------------------------------------------------
-    // 1. Create Example Heightmap (You will replace this)
-    //----------------------------------------------------
-    const int width  = 256;
-    const int height = 256;
+    std::cout << "=== CPU Heightmap Tracer V2 ===\n";
 
-    std::vector<float> heightmap(width * height);
+    //----------------------------------------------------------------------
+    // 1. Access heightmap from editor (THIS IS YOUR REAL DATA)
+    //----------------------------------------------------------------------
+    int width  = editor.hmap_w;
+    int height = editor.hmap_l;
+    float* heightmap = editor.hmap;
 
-    // simple fake terrain (replace with real data)
-    for (int z = 0; z < height; z++) {
-        for (int x = 0; x < width; x++) {
-            float dx = x - width / 2;
-            float dz = z - height / 2;
-            float dist = sqrt(dx * dx + dz * dz);
-            heightmap[z * width + x] = 10.0f * exp(-(dist / 80.0f));
-        }
+    if (heightmap == nullptr) {
+        std::cout << "ERROR: editor heightmap is null!\n";
+        return -1;
     }
 
-    //----------------------------------------------------
-    // 2. Launch rays
-    //----------------------------------------------------
-    Ray r;
-    r.ox = 128;
-    r.oz = 128;
-    r.oy = 60;         // camera height
-    r.dx = 0;
-    r.dz = 0;
-    r.dy = -1;         // pointing downward
+    std::cout << "Heightmap loaded: "
+              << width << " x " << height << "\n";
 
+
+    //----------------------------------------------------------------------
+    // 2. Build a test ray (pointing downward from camera)
+    //----------------------------------------------------------------------
+    Ray r;
+
+    r.ox = width * 0.5f;   // middle of map
+    r.oz = height * 0.5f;
+    r.oy = 60.0f;          // camera height
+
+    r.dx = 0.0f;
+    r.dy = -1.0f;          // straight down
+    r.dz = 0.0f;
+
+
+    //----------------------------------------------------------------------
+    // 3. Ray Trace (CPU)
+    //----------------------------------------------------------------------
     float hit_t, hx, hy, hz;
 
     auto start = high_resolution_clock::now();
 
     int hit = intersect_heightmap(
-        heightmap.data(),
+        heightmap,
         width,
         height,
         r,
-        0.1f,        // step
-        500.0f,      // max_t
+        0.1f,     // step size
+        500.0f,   // max distance
         hit_t, hx, hy, hz
     );
 
     auto end = high_resolution_clock::now();
     double ms = duration<double, std::milli>(end - start).count();
 
-    //----------------------------------------------------
-    // 3. Print results
-    //----------------------------------------------------
+
+    //----------------------------------------------------------------------
+    // 4. Output
+    //----------------------------------------------------------------------
     if (hit) {
         std::cout << "HIT at t=" << hit_t
                   << "  (" << hx << ", " << hy << ", " << hz << ")\n";
