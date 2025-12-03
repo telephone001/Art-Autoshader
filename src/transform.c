@@ -65,8 +65,8 @@ void hmap_transform_from_plane(
     glm_vec3_cross(downVec, rightVec, normal);
     glm_vec3_normalize(normal);
 
-    // IMPORTANT — height must scale relative to plane size
-    float heightScale = ((planeW + planeH) * 0.5f) * t->scale[1];
+    float heightScale = 0.05f * t->scale[1];   // <-- FIXED
+
     vec3 heightAxis;
     glm_vec3_scale(normal, heightScale, heightAxis);
 
