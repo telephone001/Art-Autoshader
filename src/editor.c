@@ -577,18 +577,44 @@ void editor_render(Editor *editor, int in_ecam_view, mat4 projection, mat4 view)
         cam_plane_mdl_render(&(editor->mdl_cam_plane), in_ecam_view, projection, view);
 
         // Heightmap model transform
-        
-        
-        // TODO: I put this as identity so I can compile the code. You can delete this
-        mat4 model = GLM_MAT4_IDENTITY_INIT;
-        //transform_get_matrix(&editor->hmap_transform, model);
-
-        if (in_ecam_view == 0) {
-                hmap_render(&(editor->hmap_rd), editor->hmap_l, in_ecam_view, projection, view, model);
-        } else {
-                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-                hmap_render(&(editor->hmap_rd), editor->hmap_l, in_ecam_view, projection, view, model);
-                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		mat4 model = GLM_MAT4_IDENTITY_INIT;
+		
+		// Get pointer to projected-model vertices (each vertex is 3 floats: x,y,z)
+		float *proj_verts = editor->mdl_cam_proj.vertices;
+		
+		if (proj_verts != NULL) {
+		    // proj_verts layout (groups of 3 floats):
+		    // [0..2]   = camera center
+		    // [3..5]   = bottom-left
+		    // [6..8]   = bottom-right
+		    // [9..11]  = top-left
+		    // [12..14] = top-right
+		
+		    vec3 planePts[4];
+		
+		    // Build planePts in order expected by hmap_transform_from_plane: {TL, TR, BR, BL}
+		    planePts[0][0] = proj_verts[9];  planePts[0][1] = proj_verts[10]; planePts[0][2] = proj_verts[11]; // TL
+		    planePts[1][0] = proj_verts[12]; planePts[1][1] = proj_verts[13]; planePts[1][2] = proj_verts[14]; // TR
+		    planePts[2][0] = proj_verts[6];  planePts[2][1] = proj_verts[7];  planePts[2][2] = proj_verts[8];  // BR
+		    planePts[3][0] = proj_verts[3];  planePts[3][1] = proj_verts[4];  planePts[3][2] = proj_verts[5];  // BL
+		
+		    // Initialize transform
+		    transform_init(&editor->hmap_transform);
+		
+		    // Compute the mapping matrix that places the heightmap grid on the plane
+		    hmap_transform_from_plane(&editor->hmap_transform, planePts, editor->hmap_w, editor->hmap_l);
+		
+		    // The function writes the model into editor->hmap_transform.matrix (mat4)
+		    // Copy it into local model variable for rendering
+		    memcpy(model, editor->hmap_transform.matrix, sizeof(mat4));
+		}
+		
+		        if (in_ecam_view == 0) {
+		                hmap_render(&(editor->hmap_rd), editor->hmap_l, in_ecam_view, projection, view, model);
+		        } else {
+		                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		                hmap_render(&(editor->hmap_rd), editor->hmap_l, in_ecam_view, projection, view, model);
+		                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
 }
 
