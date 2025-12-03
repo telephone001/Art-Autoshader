@@ -10,19 +10,20 @@ void transform_init(Transform* t) {
 
 void transform_get_matrix(const Transform* t, mat4 out)
 {
-    // Start with identity
     glm_mat4_identity(out);
 
-    // Apply translation
-    glm_translate(out, t->translation);
+    // Translation requires non-const vec3
+    vec3 trans = { t->translation[0], t->translation[1], t->translation[2] };
+    glm_translate(out, trans);
 
-    // Apply rotations (XYZ order)
-    glm_rotate_x(out, t->rotation[0]);
-    glm_rotate_y(out, t->rotation[1]);
-    glm_rotate_z(out, t->rotation[2]);
+    // Rotations require dest matrix argument
+    glm_rotate_x(out, t->rotation[0], out);
+    glm_rotate_y(out, t->rotation[1], out);
+    glm_rotate_z(out, t->rotation[2], out);
 
-    // Apply scale
-    glm_scale(out, t->scale);
+    // Scale also requires non-const vec3
+    vec3 scl = { t->scale[0], t->scale[1], t->scale[2] };
+    glm_scale(out, scl);
 }
 
 void hmap_transform_compute(HeightmapTransform* t) {
