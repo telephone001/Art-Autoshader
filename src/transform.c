@@ -38,57 +38,54 @@ void hmap_transform_compute(HeightmapTransform* t) {
 
 void hmap_transform_from_plane(
     HeightmapTransform* t,
-    vec3 planePts[4],     // {TL, TR, BR, BL}
-    int w,                // heightmap width samples
-    int h                 // heightmap length samples
-) {
-    vec3 rightVec, downVec;
+    vec3 corners[4],     // {TL, TR, BR, BL}
+    int w,               // heightmap width  (columns)
+    int h                // heightmap height (rows)
+)
+{
+    vec3 xDir, yDir, normal;
 
-    glm_vec3_sub(planePts[1], planePts[0], rightVec); // TR - TL
-    glm_vec3_sub(planePts[3], planePts[0], downVec);  // BL - TL
+    // 1. Compute plane directions (TR - TL, BL - TL)
+    glm_vec3_sub(corners[1], corners[0], xDir);  // X direction across top edge
+    glm_vec3_sub(corners[3], corners[0], yDir);  // Y direction down left edge
 
-    float planeW = glm_vec3_norm(rightVec);
-    float planeH = glm_vec3_norm(downVec);
+    // Normalize both
+    glm_vec3_normalize(xDir);
+    glm_vec3_normalize(yDir);
 
-    if (planeW < 1e-6f || planeH < 1e-6f)
-        return;
-
-    glm_vec3_normalize(rightVec);
-    glm_vec3_normalize(downVec);
-
-    // world-space step size for each cell
-    vec3 rightStep, downStep;
-    glm_vec3_scale(rightVec, planeW / (w - 1), rightStep);
-    glm_vec3_scale(downVec,  planeH / (h - 1), downStep);
-
-    vec3 normal;
-    glm_vec3_cross(downVec, rightVec, normal);
+    // 2. Compute normal (right × down)
+    glm_vec3_cross(xDir, yDir, normal);
     glm_vec3_normalize(normal);
 
-    float heightScale = 0.05f * t->scale[1];   // <-- FIXED
+    // 3. Scale axes to match heightmap grid spacing
+    float sx = (w > 1) ? 1.0f / (w - 1) : 1.0f;
+    float sy = (h > 1) ? 1.0f / (h - 1) : 1.0f;
 
-    vec3 heightAxis;
-    glm_vec3_scale(normal, heightScale, heightAxis);
-
+    glm_vec3_scale(xDir, sx, t->x_axis);
+    glm_vec3_scale(yDir, sy, t->y_axis);
+    glm_vec3_scale(normal, t->height_scale, t->z_axis);
+    // 4. Set origin exactly at TL corner
+    glm_vec3_copy(corners[0], t->origin);
+    // 5. Build 4×4 matrix
     glm_mat4_identity(t->matrix);
 
-    // X axis = right steps
-    t->matrix[0][0] = rightStep[0];
-    t->matrix[1][0] = rightStep[1];
-    t->matrix[2][0] = rightStep[2];
+    // X column
+    t->matrix[0][0] = t->x_axis[0];
+    t->matrix[1][0] = t->x_axis[1];
+    t->matrix[2][0] = t->x_axis[2];
 
-    // Y axis = height axis
-    t->matrix[0][1] = heightAxis[0];
-    t->matrix[1][1] = heightAxis[1];
-    t->matrix[2][1] = heightAxis[2];
+    // Y column
+    t->matrix[0][1] = t->y_axis[0];
+    t->matrix[1][1] = t->y_axis[1];
+    t->matrix[2][1] = t->y_axis[2];
 
-    // Z axis = down steps
-    t->matrix[0][2] = downStep[0];
-    t->matrix[1][2] = downStep[1];
-    t->matrix[2][2] = downStep[2];
+    // Z column (height)
+    t->matrix[0][2] = t->z_axis[0];
+    t->matrix[1][2] = t->z_axis[1];
+    t->matrix[2][2] = t->z_axis[2];
 
-    // translation
-    t->matrix[3][0] = planePts[0][0];
-    t->matrix[3][1] = planePts[0][1];
-    t->matrix[3][2] = planePts[0][2];
+    // Origin / translation
+    t->matrix[3][0] = t->origin[0];
+    t->matrix[3][1] = t->origin[1];
+    t->matrix[3][2] = t->origin[2];
 }
