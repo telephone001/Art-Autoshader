@@ -8,6 +8,19 @@ void transform_init(Transform* t) {
     glm_mat4_identity(t->matrix);
 }
 
+// Transforms the 4 plane points by a model matrix
+static void transform_plane_points(mat4 model, vec3 inPts[4], vec3 outPts[4])
+{
+    for (int i = 0; i < 4; i++) {
+        vec4 p = { inPts[i][0], inPts[i][1], inPts[i][2], 1.0f };
+        vec4 r;
+        glm_mat4_mulv(model, p, r);
+        outPts[i][0] = r[0];
+        outPts[i][1] = r[1];
+        outPts[i][2] = r[2];
+    }
+}
+
 void hmap_transform_from_plane(
     HeightmapTransform* t,
     vec3 planePts[4],     // {corner0, corner1, corner2, corner3}
