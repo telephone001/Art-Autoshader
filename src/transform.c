@@ -39,41 +39,55 @@ void hmap_transform_compute(HeightmapTransform* t) {
 void hmap_transform_from_plane(
     HeightmapTransform* t,
     vec3 planePts[4],     // {TL, TR, BR, BL}
-    int w,
-    int h
+    int w,                // heightmap width samples
+    int h                 // heightmap length samples
 ) {
     vec3 rightVec, downVec;
 
     glm_vec3_sub(planePts[1], planePts[0], rightVec); // TR - TL
     glm_vec3_sub(planePts[3], planePts[0], downVec);  // BL - TL
 
-    float sx = (w > 1) ? 1.0f / (float)(w - 1) : 1.0f;
-    float sz = (h > 1) ? 1.0f / (float)(h - 1) : 1.0f;
+    float planeW = glm_vec3_norm(rightVec);
+    float planeH = glm_vec3_norm(downVec);
 
+    if (planeW < 1e-6f || planeH < 1e-6f)
+        return;
+
+    glm_vec3_normalize(rightVec);
+    glm_vec3_normalize(downVec);
+
+    // world-space step size for each cell
     vec3 rightStep, downStep;
-    glm_vec3_scale(rightVec, sx, rightStep);
-    glm_vec3_scale(downVec,  sz, downStep);
+    glm_vec3_scale(rightVec, planeW / (w - 1), rightStep);
+    glm_vec3_scale(downVec,  planeH / (h - 1), downStep);
 
     vec3 normal;
-    // 🔄 FIX NORMAL ORIENTATION
     glm_vec3_cross(downVec, rightVec, normal);
     glm_vec3_normalize(normal);
-    glm_vec3_scale(normal, t->scale[1], normal);
+
+    // IMPORTANT — height must scale relative to plane size
+    float heightScale = ((planeW + planeH) * 0.5f) * t->scale[1];
+    vec3 heightAxis;
+    glm_vec3_scale(normal, heightScale, heightAxis);
 
     glm_mat4_identity(t->matrix);
 
+    // X axis = right steps
     t->matrix[0][0] = rightStep[0];
     t->matrix[1][0] = rightStep[1];
     t->matrix[2][0] = rightStep[2];
 
-    t->matrix[0][1] = normal[0];
-    t->matrix[1][1] = normal[1];
-    t->matrix[2][1] = normal[2];
+    // Y axis = height axis
+    t->matrix[0][1] = heightAxis[0];
+    t->matrix[1][1] = heightAxis[1];
+    t->matrix[2][1] = heightAxis[2];
 
+    // Z axis = down steps
     t->matrix[0][2] = downStep[0];
     t->matrix[1][2] = downStep[1];
     t->matrix[2][2] = downStep[2];
 
+    // translation
     t->matrix[3][0] = planePts[0][0];
     t->matrix[3][1] = planePts[0][1];
     t->matrix[3][2] = planePts[0][2];
