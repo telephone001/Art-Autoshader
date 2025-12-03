@@ -606,7 +606,7 @@ void editor_render(Editor *editor, int in_ecam_view, mat4 projection, mat4 view)
 		
 		    // Transform into WORLD SPACE using the image-plane model matrix
 		    vec3 worldPlanePts[4];
-		    transform_plane_points(editor->mdl_cam_proj.model, localPlanePts, worldPlanePts);
+		    transform_plane_points(editor->current_model_matrix, localPlanePts, worldPlanePts);
 		
 		    // Reset the heightmap transform
 		    transform_init(&editor->hmap_transform);
