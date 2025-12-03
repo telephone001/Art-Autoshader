@@ -8,14 +8,21 @@ void transform_init(Transform* t) {
     glm_mat4_identity(t->matrix);
 }
 
-void transform_get_matrix(const Transform* t, mat4 out) {
+void transform_get_matrix(const Transform* t, mat4 out)
+{
+    // Start with identity
     glm_mat4_identity(out);
 
-    glm_translate(out, (vec3)t->translation);
-    glm_rotate_x(out, t->rotation[0], out);
-    glm_rotate_y(out, t->rotation[1], out);
-    glm_rotate_z(out, t->rotation[2], out);
-    glm_scale(out, (vec3)t->scale);
+    // Apply translation
+    glm_translate(out, t->translation);
+
+    // Apply rotations (XYZ order)
+    glm_rotate_x(out, t->rotation[0]);
+    glm_rotate_y(out, t->rotation[1]);
+    glm_rotate_z(out, t->rotation[2]);
+
+    // Apply scale
+    glm_scale(out, t->scale);
 }
 
 void hmap_transform_compute(HeightmapTransform* t) {
