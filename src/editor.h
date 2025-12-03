@@ -123,6 +123,10 @@ void hmap_edit_sinc(Editor *editor);
 /// @param editor the editor you want to put this heightmap onto
 void hmap_edit_test1(Editor *editor);
 
+/// @brief puts the heightmap to all zeros
+/// @param editor the editor you want to put this heightmap onto
+void hmap_edit_zero(Editor *editor);
+
 //
 // Simple accessors for standalone CPU/CUDA heightmap usage
 //

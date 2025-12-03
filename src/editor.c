@@ -719,3 +719,27 @@ void hmap_edit_test1(Editor *editor)
         
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
+
+/// @brief puts the heightmap to all zeros
+/// @param editor the editor you want to put this heightmap onto
+void hmap_edit_zero(Editor *editor)
+{
+        
+        for (int z = 0; z < editor->hmap_l; z++) {
+                for (int x = 0; x < editor->hmap_w; x++) {
+                        editor->hmap[z * editor->hmap_w + x] = 0;
+                }
+        }
+        
+        
+        glBindBuffer(GL_ARRAY_BUFFER, editor->hmap_rd.vbo);
+
+        glBufferSubData(
+                GL_ARRAY_BUFFER,
+                0,
+                editor->hmap_rd.vertices_length * sizeof(float),
+                editor->hmap_rd.vertices
+        );
+        
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+}

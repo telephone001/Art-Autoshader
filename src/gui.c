@@ -18,6 +18,7 @@ int editor_cam_data_init(EditorCamData *ecam_data, int width, int height)
 		.width = width,
 		.height = height,
 		.in_perspective = 0,
+		.mouse_offset = 0,
 
 	// will be set below
 		.fbo = 0,
@@ -312,7 +313,7 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 		gui_menu->ecam_data.height = height;
 	}
 
-
+	// if there is an fbo, display it! otherwise put an error
 	if (gui_menu->ecam_data.tex != 0) {
 		menu_fit_img(
 			gui_menu->ctx, 
@@ -329,25 +330,41 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 	}
 
 	// Get the rectangle of the img (prev widget)
+	// REMEMBER THAT THIS POSITION IS OF THE BOTTOM LEFT CORNER
 	struct nk_rect img_rect = nk_widget_bounds(gui_menu->ctx);
 
-	// NUKLEAR BUG. 
-	img_rect.y -= img_rect.h;
-
-
+	//the previous position of the mouse. (used for dragging behavior)
 	static double prev_mouse_x, prev_mouse_y;
+
+	//the current position of the mouse. (used for dragging and editing behavior)
 	double mouse_x, mouse_y;
 
-	// handle mouse behaviors in editor
+	//we have to change position of corner to be topleft for nk_input_is_mouse_hovering_rect
+	img_rect.y -= img_rect.h;
+
+	// handle mouse dragging behaviors in editor
 	if (nk_input_is_mouse_hovering_rect(&gui_menu->ctx->input, img_rect)) {
 
 		glfwGetCursorPos(wnd, &mouse_x, &mouse_y);
 
-		int pressed = glfwGetMouseButton(wnd, GLFW_MOUSE_BUTTON_LEFT);
-
-		if ((pressed == GLFW_PRESS)) {
+		//Right click means drag
+		if (glfwGetMouseButton(wnd, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
 			gui_menu->ecam_data.pos_offset.x -= (mouse_x - prev_mouse_x) * delta_time * drag_scale / img_rect.w;
 			gui_menu->ecam_data.pos_offset.y += (mouse_y - prev_mouse_y) * delta_time * drag_scale / img_rect.h;
+		}
+
+		//change the corner back to the bottom left for editor pos calculation
+		img_rect.y += img_rect.h;
+
+		//left click means edit
+		if (glfwGetMouseButton(wnd, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+			gui_menu->ecam_data.mouse_offset.x = (mouse_x - img_rect.x) / img_rect.w;
+			gui_menu->ecam_data.mouse_offset.y = (img_rect.y - mouse_y) / img_rect.h;
+
+			printf("%f %f\n",
+				gui_menu->ecam_data.mouse_offset.x,
+				gui_menu->ecam_data.mouse_offset.y
+			);
 		}
 
 		//printf("%f %f\n", gui_menu->ecam_offset.x, gui_menu->ecam_offset.y);

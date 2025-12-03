@@ -56,6 +56,9 @@ typedef struct EditorCamData {
         int width;    // the pixel width of the fbo
         int height;   //the pixel height of the fbo
 
+        vec2s mouse_offset; //the 0-1 normalized distance from the bottom left corner of the image
+        //0,0 means bottom left, 1,0 means bottom left
+
         int in_perspective;     // 1 if we enable perspective on ecam view
 } EditorCamData;
 
