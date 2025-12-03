@@ -6,7 +6,6 @@ typedef struct HeightmapTransform {
     vec3 translation;   // final translation in world space
     vec3 rotation;      // euler rotations (radians)
     vec3 scale;         // scale in x,y,z
-    mat4 matrix;        // final model matrix
     float x_axis[3];
     float y_axis[3];
     float z_axis[3];
