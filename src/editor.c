@@ -616,7 +616,7 @@ void editor_render(Editor *editor, int in_ecam_view, mat4 projection, mat4 view)
 		    // The function writes the model into editor->hmap_transform.matrix (mat4)
 		    // Copy it into local model variable for rendering
 		    memcpy(model, editor->hmap_transform.matrix, sizeof(mat4));
-		}
+		
 		
 		        if (in_ecam_view == 0) {
 		                hmap_render(&(editor->hmap_rd), editor->hmap_l, in_ecam_view, projection, view, model);
