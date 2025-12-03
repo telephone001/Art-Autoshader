@@ -587,63 +587,62 @@ static void transform_plane_points(mat4 m, vec3 inPts[4], vec3 outPts[4])
 /// @param view you are in charge of whether you send the flycam or the editor cam
 void editor_render(Editor *editor, int in_ecam_view, mat4 projection, mat4 view)
 {
-        if (in_ecam_view == 0) {
-                //we render yellow wireframes in freefly mode
-                cam_proj_mdl_render(&(editor->mdl_cam_proj), projection, view);
-        }
+    if (in_ecam_view == 0) {
+        // we render yellow wireframes in freefly mode
+        cam_proj_mdl_render(&(editor->mdl_cam_proj), projection, view);
+    }
 
-        //there is no need to make an editor mode for cam plane because it is always orthogonal to the camera
-        cam_plane_mdl_render(&(editor->mdl_cam_plane), in_ecam_view, projection, view);
-	
-		// Heightmap model transform
-		mat4 model = GLM_MAT4_IDENTITY_INIT;
-		
-		// Pointer to projected-model vertices (local-space quad vertices)
-		float *proj_verts = editor->mdl_cam_proj.vertices;
-		
-		if (proj_verts != NULL)
-		{
-		    // Local-space plane corners (FROM YOUR ORIGINAL CODE)
-		    vec3 localPlanePts[4];
-		
-		    // Order required by hmap_transform_from_plane(): {TL, TR, BR, BL}
-		    glm_vec3_copy((vec3){ proj_verts[9],  proj_verts[10], proj_verts[11] },  localPlanePts[0]); // TL
-		    glm_vec3_copy((vec3){ proj_verts[12], proj_verts[13], proj_verts[14] },  localPlanePts[1]); // TR
-		    glm_vec3_copy((vec3){ proj_verts[6],  proj_verts[7],  proj_verts[8]  },  localPlanePts[2]); // BR
-		    glm_vec3_copy((vec3){ proj_verts[3],  proj_verts[4],  proj_verts[5]  },  localPlanePts[3]); // BL
-		
-		    // Transform into WORLD SPACE using the image-plane model matrix
-		    vec3 worldPlanePts[4];
-		    transform_plane_points(editor->current_model_matrix, localPlanePts, worldPlanePts);
-		
-		    // Reset the heightmap transform
-		    transform_init(&editor->hmap_transform);
-		
-		    // Compute transform matrix that maps heightmap grid onto the image plane
-		    hmap_transform_from_plane(
-		        &editor->hmap_transform,
-		        worldPlanePts,
-		        editor->hmap_w,
-		        editor->hmap_l
-		    );
-		
-		    // Build final model matrix for OpenGL
-		    transform_get_matrix(&editor->hmap_transform, model);
-		}
-				
-		    // The function writes the model into editor->hmap_transform.matrix (mat4)
-		    // Copy it into local model variable for rendering
-		    memcpy(model, editor->hmap_transform.matrix, sizeof(mat4));
-		
-		
-		        if (in_ecam_view == 0) {
-		                hmap_render(&(editor->hmap_rd), editor->hmap_l, in_ecam_view, projection, view, model);
-		        } else {
-		                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		                hmap_render(&(editor->hmap_rd), editor->hmap_l, in_ecam_view, projection, view, model);
-		                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        }
+    // there is no need to make an editor mode for cam plane because it is always orthogonal to the camera
+    cam_plane_mdl_render(&(editor->mdl_cam_plane), in_ecam_view, projection, view);
+
+    //
+    // Heightmap model transform
+    //
+    mat4 model = GLM_MAT4_IDENTITY_INIT;
+
+    // Pointer to projected-model vertices (these are already world-space positions)
+    float *proj_verts = editor->mdl_cam_proj.vertices;
+
+    if (proj_verts != NULL)
+    {
+        // Local (but already world-space) plane corners
+        vec3 worldPlanePts[4];
+
+        // proj_verts layout (groups of 3 floats):
+        // [0..2]   = camera center
+        // [3..5]   = bottom-left
+        // [6..8]   = bottom-right
+        // [9..11]  = top-left
+        // [12..14] = top-right
+
+        // Build worldPlanePts in order expected by hmap_transform_from_plane: {TL, TR, BR, BL}
+        worldPlanePts[0][0] = proj_verts[9];  worldPlanePts[0][1] = proj_verts[10]; worldPlanePts[0][2] = proj_verts[11]; // TL
+        worldPlanePts[1][0] = proj_verts[12]; worldPlanePts[1][1] = proj_verts[13]; worldPlanePts[1][2] = proj_verts[14]; // TR
+        worldPlanePts[2][0] = proj_verts[6];  worldPlanePts[2][1] = proj_verts[7];  worldPlanePts[2][2] = proj_verts[8];  // BR
+        worldPlanePts[3][0] = proj_verts[3];  worldPlanePts[3][1] = proj_verts[4];  worldPlanePts[3][2] = proj_verts[5];  // BL
+
+        // Initialize / reset the heightmap transform
+        transform_init(&editor->hmap_transform);
+
+        // Compute the mapping matrix that places the heightmap grid on the plane (worldPlanePts are world-space)
+        hmap_transform_from_plane(&editor->hmap_transform, worldPlanePts, editor->hmap_w, editor->hmap_l);
+
+        // Build final model matrix for OpenGL (from TRS stored in the Transform)
+        transform_get_matrix(&editor->hmap_transform, model);
+    }
+
+    //
+    // Render heightmap
+    //
+    if (in_ecam_view == 0) {
+        hmap_render(&(editor->hmap_rd), editor->hmap_l, in_ecam_view, projection, view, model);
+    } else {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        hmap_render(&(editor->hmap_rd), editor->hmap_l, in_ecam_view, projection, view, model);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    }
 }
+
 
 /// @brief frees the data of an editor 
 ///             (WARNING: It also deletes gltextures. If something else is using your texture, set the texture in the renderdata to 0)
