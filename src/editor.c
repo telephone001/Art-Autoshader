@@ -559,18 +559,26 @@ void hmap_render(RenderData *hmap_rdata, int hmap_row_len, int in_ecam_view, mat
         glDrawElements(hmap_rdata->primitive_type, hmap_rdata->indices_length, GL_UNSIGNED_INT, 0);
 }
 
-// Apply a 4x4 transform to 4 plane points
-static void transform_plane_points(const mat4 m, vec3 inPts[4], vec3 outPts[4]) {
+// inPts: array of 4 vec3 (float[3])
+// outPts: array of 4 vec3 (float[3])
+// m: mat4
+static void transform_plane_points(mat4 m, vec3 inPts[4], vec3 outPts[4]) 
+{
     for (int i = 0; i < 4; i++) {
-        vec4 p = { inPts[i].x, inPts[i].y, inPts[i].z, 1.0f };
+
+        vec4 p = { inPts[i][0], inPts[i][1], inPts[i][2], 1.0f };
         vec4 r;
 
         // r = m * p
         glm_mat4_mulv(m, p, r);
 
-        outPts[i] = (vec3){ r[0], r[1], r[2] };
+        // outPts[i] is a raw float[3], so we copy manually
+        outPts[i][0] = r[0];
+        outPts[i][1] = r[1];
+        outPts[i][2] = r[2];
     }
 }
+
 
 /// @brief renders an editor object. You are in charge of if projection and view are for flycam or editor
 /// @param editor the editor object
