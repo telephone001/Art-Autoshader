@@ -10,57 +10,58 @@ void transform_init(Transform* t) {
 
 void hmap_transform_from_plane(
     HeightmapTransform* t,
-    vec3 planePts[4],     // {TL, TR, BR, BL}
+    vec3 planePts[4],     // {corner0, corner1, corner2, corner3}
     int w,                // heightmap width samples
-    int h                 // heightmap length samples
+    int h                 // heightmap height samples
 ) {
-    vec3 rightVec, downVec;
+    // Compute two axes along the plane from the first corner
+    vec3 uVec, vVec;
+    glm_vec3_sub(planePts[1], planePts[0], uVec); // vector toward second corner
+    glm_vec3_sub(planePts[3], planePts[0], vVec); // vector toward fourth corner
 
-    glm_vec3_sub(planePts[1], planePts[0], rightVec); // TR - TL
-    glm_vec3_sub(planePts[3], planePts[0], downVec);  // BL - TL
+    float uLen = glm_vec3_norm(uVec);
+    float vLen = glm_vec3_norm(vVec);
 
-    float planeW = glm_vec3_norm(rightVec);
-    float planeH = glm_vec3_norm(downVec);
-
-    if (planeW < 1e-6f || planeH < 1e-6f)
+    if (uLen < 1e-6f || vLen < 1e-6f)
         return;
 
-    glm_vec3_normalize(rightVec);
-    glm_vec3_normalize(downVec);
+    // Normalize directions
+    vec3 uDir, vDir;
+    glm_vec3_normalize_to(uVec, uDir);
+    glm_vec3_normalize_to(vVec, vDir);
 
-    // world-space step size for each cell
-    vec3 rightStep, downStep;
-    glm_vec3_scale(rightVec, planeW / (w - 1), rightStep);
-    glm_vec3_scale(downVec,  planeH / (h - 1), downStep);
+    // Step size for each heightmap cell
+    vec3 uStep, vStep;
+    glm_vec3_scale(uDir, uLen / (w - 1), uStep);
+    glm_vec3_scale(vDir, vLen / (h - 1), vStep);
 
+    // Compute normal (height axis)
     vec3 normal;
-    glm_vec3_cross(downVec, rightVec, normal);
+    glm_vec3_cross(uDir, vDir, normal);
     glm_vec3_normalize(normal);
 
     float heightScale = 0.075f * t->scale[1];
     vec3 heightAxis;
     glm_vec3_scale(normal, heightScale, heightAxis);
 
+    // Fill transform matrix
     glm_mat4_identity(t->matrix);
 
-    // X axis = right steps
-    t->matrix[0][0] = rightStep[0];
-    t->matrix[1][0] = rightStep[1];
-    t->matrix[2][0] = rightStep[2];
+    // Width axis
+    t->matrix[0][0] = uStep[0];
+    t->matrix[1][0] = uStep[1];
+    t->matrix[2][0] = uStep[2];
 
-    // Y axis = height axis
+    // Height axis
     t->matrix[0][1] = heightAxis[0];
     t->matrix[1][1] = heightAxis[1];
     t->matrix[2][1] = heightAxis[2];
 
-    // Z axis = down steps
-    t->matrix[0][2] = downStep[0];
-    t->matrix[1][2] = downStep[1];
-    t->matrix[2][2] = downStep[2];
+    // Depth axis
+    t->matrix[0][2] = vStep[0];
+    t->matrix[1][2] = vStep[1];
+    t->matrix[2][2] = vStep[2];
 
-    // translation
-    t->matrix[3][0] = planePts[0][0];
-    t->matrix[3][1] = planePts[0][1];
-    t->matrix[3][2] = planePts[0][2];
+    // Translation (origin corner)
+    glm_vec3_copy(planePts[0], t->matrix[3]);
 }
-
