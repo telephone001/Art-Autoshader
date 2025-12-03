@@ -22,20 +22,21 @@ void transform_init(Transform* t) {
 /* ---------------------------------------------------------
    Build TRS matrix into 'out'
 --------------------------------------------------------- */
-#include "transform.h"
-#include <cglm/cglm.h>
 
 void transform_get_matrix(const Transform* t, mat4 out) {
     mat4 T, R, S;
 
-    // Cast away const because cglm does not accept const vec3
-    glm_translate_make(T, (vec3)t->translation);
-    glm_euler_xyz((vec3)t->rotation, R);
-    glm_scale_make(S, (vec3)t->scale);
+    // Temporary writable vec3 copies
+    vec3 tr = { t->translation[0], t->translation[1], t->translation[2] };
+    vec3 rot = { t->rotation[0], t->rotation[1], t->rotation[2] };
+    vec3 sc = { t->scale[0], t->scale[1], t->scale[2] };
 
-    // cglm requires an array of pointers to mat4
+    glm_translate_make(T, tr);
+    glm_euler_xyz(rot, R);
+    glm_scale_make(S, sc);
+
+    // cglm requires an array of mat4*
     mat4* mats[3] = { &T, &R, &S };
-
     glm_mat4_mulN(mats, 3, out);
 }
 
