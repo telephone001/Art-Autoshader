@@ -575,35 +575,43 @@ void editor_render(Editor *editor, int in_ecam_view, mat4 projection, mat4 view)
 
         //there is no need to make an editor mode for cam plane because it is always orthogonal to the camera
         cam_plane_mdl_render(&(editor->mdl_cam_plane), in_ecam_view, projection, view);
-
-        // Heightmap model transform
+	
+		// Heightmap model transform
 		mat4 model = GLM_MAT4_IDENTITY_INIT;
 		
-		// Get pointer to projected-model vertices (each vertex is 3 floats: x,y,z)
+		// Pointer to projected-model vertices (local-space quad vertices)
 		float *proj_verts = editor->mdl_cam_proj.vertices;
 		
-		if (proj_verts != NULL) {
-		    // proj_verts layout (groups of 3 floats):
-		    // [0..2]   = camera center
-		    // [3..5]   = bottom-left
-		    // [6..8]   = bottom-right
-		    // [9..11]  = top-left
-		    // [12..14] = top-right
+		if (proj_verts != NULL)
+		{
+		    // Local-space plane corners (FROM YOUR ORIGINAL CODE)
+		    vec3 localPlanePts[4];
 		
-		    vec3 planePts[4];
+		    // Order required by hmap_transform_from_plane(): {TL, TR, BR, BL}
+		    glm_vec3_copy((vec3){ proj_verts[9],  proj_verts[10], proj_verts[11] },  localPlanePts[0]); // TL
+		    glm_vec3_copy((vec3){ proj_verts[12], proj_verts[13], proj_verts[14] },  localPlanePts[1]); // TR
+		    glm_vec3_copy((vec3){ proj_verts[6],  proj_verts[7],  proj_verts[8]  },  localPlanePts[2]); // BR
+		    glm_vec3_copy((vec3){ proj_verts[3],  proj_verts[4],  proj_verts[5]  },  localPlanePts[3]); // BL
 		
-		    // Build planePts in order expected by hmap_transform_from_plane: {TL, TR, BR, BL}
-		    planePts[0][0] = proj_verts[9];  planePts[0][1] = proj_verts[10]; planePts[0][2] = proj_verts[11]; // TL
-		    planePts[1][0] = proj_verts[12]; planePts[1][1] = proj_verts[13]; planePts[1][2] = proj_verts[14]; // TR
-		    planePts[2][0] = proj_verts[6];  planePts[2][1] = proj_verts[7];  planePts[2][2] = proj_verts[8];  // BR
-		    planePts[3][0] = proj_verts[3];  planePts[3][1] = proj_verts[4];  planePts[3][2] = proj_verts[5];  // BL
+		    // Transform into WORLD SPACE using the image-plane model matrix
+		    vec3 worldPlanePts[4];
+		    transform_plane_points(editor->mdl_cam_proj.matrix, localPlanePts, worldPlanePts);
 		
-		    // Initialize transform
+		    // Reset the heightmap transform
 		    transform_init(&editor->hmap_transform);
 		
-		    // Compute the mapping matrix that places the heightmap grid on the plane
-		    hmap_transform_from_plane(&editor->hmap_transform, planePts, editor->hmap_w, editor->hmap_l);
+		    // Compute transform matrix that maps heightmap grid onto the image plane
+		    hmap_transform_from_plane(
+		        &editor->hmap_transform,
+		        worldPlanePts,
+		        editor->hmap_w,
+		        editor->hmap_l
+		    );
 		
+		    // Build final model matrix for OpenGL
+		    transform_get_matrix(&editor->hmap_transform, model);
+		}
+				
 		    // The function writes the model into editor->hmap_transform.matrix (mat4)
 		    // Copy it into local model variable for rendering
 		    memcpy(model, editor->hmap_transform.matrix, sizeof(mat4));
