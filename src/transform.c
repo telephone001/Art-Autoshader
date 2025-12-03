@@ -39,8 +39,8 @@ void hmap_transform_compute(HeightmapTransform* t) {
 void hmap_transform_from_plane(
     HeightmapTransform* t,
     vec3 planePts[4],     // {TL, TR, BR, BL}
-    int w,                // width  (columns)
-    int h                 // height (rows)
+    int w,
+    int h
 ) {
     vec3 rightVec, downVec;
 
@@ -55,30 +55,25 @@ void hmap_transform_from_plane(
     glm_vec3_scale(downVec,  sz, downStep);
 
     vec3 normal;
-    glm_vec3_cross(rightVec, downVec, normal);
+    // 🔄 FIX NORMAL ORIENTATION
+    glm_vec3_cross(downVec, rightVec, normal);
     glm_vec3_normalize(normal);
-
-    // Use t->scale[1] as height scale
     glm_vec3_scale(normal, t->scale[1], normal);
 
     glm_mat4_identity(t->matrix);
 
-    // X direction
     t->matrix[0][0] = rightStep[0];
     t->matrix[1][0] = rightStep[1];
     t->matrix[2][0] = rightStep[2];
 
-    // Height direction
     t->matrix[0][1] = normal[0];
     t->matrix[1][1] = normal[1];
     t->matrix[2][1] = normal[2];
 
-    // Z direction
     t->matrix[0][2] = downStep[0];
     t->matrix[1][2] = downStep[1];
     t->matrix[2][2] = downStep[2];
 
-    // Translation (TL)
     t->matrix[3][0] = planePts[0][0];
     t->matrix[3][1] = planePts[0][1];
     t->matrix[3][2] = planePts[0][2];
