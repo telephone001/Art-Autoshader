@@ -42,48 +42,43 @@ void hmap_transform_from_plane(
     int w,                // width  (columns)
     int h                 // height (rows)
 ) {
-    // --- Compute plane axes ---
     vec3 rightVec, downVec;
 
-    // TR - TL  → plane width direction
-    glm_vec3_sub(planePts[1], planePts[0], rightVec);
-    // BL - TL  → plane height direction
-    glm_vec3_sub(planePts[3], planePts[0], downVec);
+    glm_vec3_sub(planePts[1], planePts[0], rightVec); // TR - TL
+    glm_vec3_sub(planePts[3], planePts[0], downVec);  // BL - TL
 
-    // --- Scale factors: one step in heightmap space ---
     float sx = (w > 1) ? 1.0f / (float)(w - 1) : 1.0f;
     float sz = (h > 1) ? 1.0f / (float)(h - 1) : 1.0f;
 
-    // --- Scale axes so that 0→w-1 maps to the whole plane ---
     vec3 rightStep, downStep;
     glm_vec3_scale(rightVec, sx, rightStep);
     glm_vec3_scale(downVec,  sz, downStep);
 
-    // --- Height direction: use normal scaled by height_scale ---
     vec3 normal;
     glm_vec3_cross(rightVec, downVec, normal);
     glm_vec3_normalize(normal);
-    glm_vec3_scale(normal, t->height_scale, normal);
 
-    // --- Build matrix ---
+    // Use t->scale[1] as height scale
+    glm_vec3_scale(normal, t->scale[1], normal);
+
     glm_mat4_identity(t->matrix);
 
-    // Column 0 → X direction (right)
+    // X direction
     t->matrix[0][0] = rightStep[0];
     t->matrix[1][0] = rightStep[1];
     t->matrix[2][0] = rightStep[2];
 
-    // Column 1 → Height direction (normal scaled)
+    // Height direction
     t->matrix[0][1] = normal[0];
     t->matrix[1][1] = normal[1];
     t->matrix[2][1] = normal[2];
 
-    // Column 2 → Z direction (down)
+    // Z direction
     t->matrix[0][2] = downStep[0];
     t->matrix[1][2] = downStep[1];
     t->matrix[2][2] = downStep[2];
 
-    // Column 3 → translation (TL point)
+    // Translation (TL)
     t->matrix[3][0] = planePts[0][0];
     t->matrix[3][1] = planePts[0][1];
     t->matrix[3][2] = planePts[0][2];
