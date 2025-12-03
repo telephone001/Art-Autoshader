@@ -1,69 +1,68 @@
 #include "transform.h"
 #include <cglm/cglm.h>
-#include <string.h>
 
-// Basic TRS transform
-void hmap_transform_compute(HeightmapTransform* t)
-{
+void transform_init(Transform* t) {
+    glm_vec3_zero(t->translation);
+    glm_vec3_zero(t->rotation);
+    t->scale[0] = t->scale[1] = t->scale[2] = 1.0f;
+    glm_mat4_identity(t->matrix);
+}
+
+void transform_get_matrix(const Transform* t, mat4 out) {
+    glm_mat4_identity(out);
+
+    glm_translate(out, (vec3)t->translation);
+    glm_rotate_x(out, t->rotation[0], out);
+    glm_rotate_y(out, t->rotation[1], out);
+    glm_rotate_z(out, t->rotation[2], out);
+    glm_scale(out, (vec3)t->scale);
+}
+
+void hmap_transform_compute(HeightmapTransform* t) {
     glm_mat4_identity(t->matrix);
 
-    // Scale
-    glm_scale(t->matrix, t->scale);
-
-    // Rotate (XYZ order)
+    glm_translate(t->matrix, t->translation);
     glm_rotate_x(t->matrix, t->rotation[0], t->matrix);
     glm_rotate_y(t->matrix, t->rotation[1], t->matrix);
     glm_rotate_z(t->matrix, t->rotation[2], t->matrix);
-
-    // Translation
-    glm_translate(t->matrix, t->translation);
+    glm_scale(t->matrix, t->scale);
 }
 
-// map the heightmap to a 3d plane using the 4 corners
-// planePts = { TL, TR, BR, BL }
-// heightmap grid spans:
-//   x: 0..hmap_width
-//   z: 0..hmap_height
-// This computes a model matrix that linearly interpolates the plane
-
 void hmap_transform_from_plane(
-    HeightmapTransform* out,
-    vec3 planePts[4],
-    int w, int h
+    HeightmapTransform* t,
+    vec3 planePts[4],     // {TL, TR, BR, BL}
+    int w,                // width  (columns)
+    int h                 // height (rows)
 ) {
-    // 1. Compute basis vectors of the plane
-    vec3 right; // TR - TL
-    vec3 down;  // BL - TL
-    glm_vec3_sub(planePts[1], planePts[0], right);
-    glm_vec3_sub(planePts[3], planePts[0], down);
+    vec3 right, down, normal;
 
-    // Scale basis to heightmap size
-    glm_vec3_scale(right, 1.0f / (float)w, right);
-    glm_vec3_scale(down,  1.0f / (float)h, down);
+    glm_vec3_sub(planePts[1], planePts[0], right);   // TR - TL
+    glm_vec3_sub(planePts[3], planePts[0], down);    // BL - TL
 
-    // 2. Build model matrix using TL as origin
-    glm_mat4_identity(out->matrix);
+    float sx = (w > 1) ? 1.0f / (w - 1) : 1.0f;
+    float sz = (h > 1) ? 1.0f / (h - 1) : 1.0f;
 
-    // Insert basis vectors as matrix columns
-    out->matrix[0][0] = right[0];
-    out->matrix[1][0] = right[1];
-    out->matrix[2][0] = right[2];
+    glm_vec3_scale(right, sx, right);
+    glm_vec3_scale(down,  sz, down);
 
-    out->matrix[0][2] = down[0];
-    out->matrix[1][2] = down[1];
-    out->matrix[2][2] = down[2];
+    glm_mat4_identity(t->matrix);
 
-    // Up vector (normal)
-    vec3 normal;
+    t->matrix[0][0] = right[0];
+    t->matrix[1][0] = right[1];
+    t->matrix[2][0] = right[2];
+
     glm_vec3_cross(right, down, normal);
     glm_vec3_normalize(normal);
 
-    out->matrix[0][1] = normal[0];
-    out->matrix[1][1] = normal[1];
-    out->matrix[2][1] = normal[2];
+    t->matrix[0][1] = normal[0];
+    t->matrix[1][1] = normal[1];
+    t->matrix[2][1] = normal[2];
 
-    // 3. Set translation = TL of plane
-    out->matrix[3][0] = planePts[0][0];
-    out->matrix[3][1] = planePts[0][1];
-    out->matrix[3][2] = planePts[0][2];
+    t->matrix[0][2] = down[0];
+    t->matrix[1][2] = down[1];
+    t->matrix[2][2] = down[2];
+
+    t->matrix[3][0] = planePts[0][0];
+    t->matrix[3][1] = planePts[0][1];
+    t->matrix[3][2] = planePts[0][2];
 }
