@@ -155,7 +155,11 @@ void key_callback_menu_switching(
                 if (key == GLFW_KEY_2 && action == GLFW_PRESS) {
                         debug_thing = 4;
                 }
-                if (key == GLFW_KEY_5 && action == GLFW_PRESS) debug_thing = 5;
+                if (key == GLFW_KEY_5 && action == GLFW_PRESS) {
+                        debug_thing = 5;
+                        printf("Debug 5 triggered!\n");
+                }
+
 	}
 
         //these are required because the only other alternative would be global variables.
@@ -353,50 +357,46 @@ int main()
                         debug_thing = 0;
                 }
                 
-                // RAYTRACING TIME !  ! !
+                // ===== RAYTRACING TIME =====
                 if (debug_thing == 5 && editors[0].mdl_cam_proj.vao != 0 ) {
-                        int width, height;
-	                glfwGetWindowSize(wnd, &width, &height);
-                        //array of rays
-                        vec3s *cam_dirs = ht_generate_camera_directions(&camera, width, height);
+                int width, height;
+                glfwGetWindowSize(wnd, &width, &height);
 
-                        for (int i = 0; i < height; i++) {
-                                for (int j = 0; j < width; j++) {
-                                        //how far the ray goes
-                                        float t_ray;
-                                        vec3s point;
+                // ===== 1️⃣ Position camera above map and look down =====
+                camera.pos   = (vec3s){ 50.0f, 20.0f, 50.0f };   // Adjust according to your map size
+                camera.front = (vec3s){ 0.0f, -1.0f, 0.0f };    // Look straight down
+                camera.up    = (vec3s){ 0.0f, 0.0f, -1.0f };    // Set a proper up
+                camera.right = (vec3s){ 1.0f, 0.0f, 0.0f };     // Right vector
 
-                                        int shot = ht_intersect_heightmap_ray(
-                                                editors[0].hmap, editors[0].hmap_w, editors[0].hmap_l, camera.pos, cam_dirs[i*height + j],
-                                                0.1, 10, &t_ray, &point);
-                                        
-                                                
-                                        if (shot != 0) {
-                                                vec3s point2 = camera.pos;
-                                                vec3s tmp = glms_vec3_scale(cam_dirs[i * height + j], t_ray);
-                                                point2 = glms_vec3_add(camera.pos, tmp);
-                                                light_source_add(&light_sources_data, (LightSource){DIRECTIONAL, point2, 1});
+                // ===== 2️⃣ Generate rays for each pixel =====
+                vec3s *cam_dirs = ht_generate_camera_directions(&camera, width, height);
 
-                                                printf("%f %f %f\n", point2.x, point2.y, point2.z);
-                                        }
-                                }
+                // ===== 3️⃣ Trace rays =====
+                for (int i = 0; i < height; i++) {
+                        for (int j = 0; j < width; j++) {
+                        float t_ray;
+                        vec3s hit_point;
+
+                        // ✅ Correct indexing: i*width + j
+                        int hit = ht_intersect_heightmap_ray(
+                                editors[0].hmap, editors[0].hmap_w, editors[0].hmap_l,
+                                camera.pos, cam_dirs[i*width + j],
+                                0.1f, 100.0f, // step and max distance
+                                &t_ray, &hit_point
+                        );
+
+                        if (hit) {
+                                vec3s point2 = glms_vec3_add(camera.pos, glms_vec3_scale(cam_dirs[i*width + j], t_ray));
+                                light_source_add(&light_sources_data, (LightSource){DIRECTIONAL, point2, 1});
+                                printf("Hit: %f %f %f\n", point2.x, point2.y, point2.z);
                         }
-
-                        free(cam_dirs);
-
-                        debug_thing = 0;
-                }
-
-                printf("%f %f %f\n", camera.pos.x, camera.pos.y, camera.pos.z);
-
-                //Render the editors
-                glEnable(GL_DEPTH_TEST);
-                glDepthFunc(GL_LESS);
-                for (int i = 0; i < MAX_EDITORS; i++) {
-                        if (editors[i].mdl_cam_proj.vao != 0 ) {
-                                editor_render(&(editors[i]), 0, flycam_projection, flycam_view);
                         }
                 }
+
+                free(cam_dirs);
+                debug_thing = 0;
+                }
+
 
 ///////////////////////////////// TESTS ON FRAMEBUFFER ////////////////////////////////////
                 glBindFramebuffer(GL_FRAMEBUFFER, gui_menu.ecam_data.fbo);
