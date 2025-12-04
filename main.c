@@ -10,6 +10,7 @@
 #include "src/gui.h"
 #include "src/editor.h"
 #include "src/light_sources.h"
+#include "src/heighttracer_cpu.h"   // <-- ADDED
 
 #include "general/debug.h"
 
@@ -153,6 +154,7 @@ void key_callback_menu_switching(
                 if (key == GLFW_KEY_2 && action == GLFW_PRESS) {
                         debug_thing = 4;
                 }
+                if (key == GLFW_KEY_5 && action == GLFW_PRESS) debug_thing = 5;
 	}
 
         //these are required because the only other alternative would be global variables.
