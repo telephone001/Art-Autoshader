@@ -141,7 +141,8 @@ int editor_get_width(Editor* editor);
 /// @brief Returns heightmap length (number of Z samples)
 int editor_get_height(Editor* editor);
 
-
+// modify heightmap (your preset)
+void hmap_edit_edbert(Editor *editor);
 
 
 
