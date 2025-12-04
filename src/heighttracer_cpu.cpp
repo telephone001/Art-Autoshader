@@ -1,8 +1,5 @@
 #include "heighttracer_cpu.h"
-#include <math.h>
-#include <string.h> // memset
-#include "glfw_window.h" // ensures Camera, vec3s available
-#include "editor.h"
+
 
 // Helper: sample nearest neighbor from heightmap (x,z world coords)
 static inline float sample_hmap_nearest(const float* hmap, int w, int l, float x, float z)

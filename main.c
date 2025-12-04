@@ -7,10 +7,11 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_include.h>
 
+
 #include "src/gui.h"
 #include "src/editor.h"
 #include "src/light_sources.h"
-#include "src/heighttracer_cpu.h"   // <-- ADDED
+#include "src/heighttracer_cpu.h"
 
 #include "general/debug.h"
 
@@ -352,6 +353,42 @@ int main()
                         debug_thing = 0;
                 }
                 
+                // RAYTRACING TIME !  ! !
+                if (debug_thing == 5 && editors[0].mdl_cam_proj.vao != 0 ) {
+                        int width, height;
+	                glfwGetWindowSize(wnd, &width, &height);
+                        //array of rays
+                        vec3s *cam_dirs = ht_generate_camera_directions(&camera, width, height);
+
+                        for (int i = 0; i < height; i++) {
+                                for (int j = 0; j < width; j++) {
+                                        //how far the ray goes
+                                        float t_ray;
+                                        vec3s point;
+
+                                        int shot = ht_intersect_heightmap_ray(
+                                                editors[0].hmap, editors[0].hmap_w, editors[0].hmap_l, camera.pos, cam_dirs[i*height + j],
+                                                0.1, 10, &t_ray, &point);
+                                        
+                                                
+                                        if (shot != 0) {
+                                                vec3s point2 = camera.pos;
+                                                vec3s tmp = glms_vec3_scale(cam_dirs[i * height + j], t_ray);
+                                                point2 = glms_vec3_add(camera.pos, tmp);
+                                                light_source_add(&light_sources_data, (LightSource){DIRECTIONAL, point2, 1});
+
+                                                printf("%f %f %f\n", point2.x, point2.y, point2.z);
+                                        }
+                                }
+                        }
+
+                        free(cam_dirs);
+
+                        debug_thing = 0;
+                }
+
+                printf("%f %f %f\n", camera.pos.x, camera.pos.y, camera.pos.z);
+
                 //Render the editors
                 glEnable(GL_DEPTH_TEST);
                 glDepthFunc(GL_LESS);

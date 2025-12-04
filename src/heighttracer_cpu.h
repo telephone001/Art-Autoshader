@@ -4,6 +4,15 @@
 #include "glfw_window.h"// Camera type
 #include <stdlib.h>     // malloc/free
 
+#include <math.h>
+#include <string.h> // memset
+#include "glfw_window.h" // ensures Camera, vec3s available
+#include "editor.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // NOTE: uses vec3s from cglm (type used across your project)
 
 // Allocates and returns an array of ray directions (vec3s) for every pixel.
@@ -31,3 +40,7 @@ void ht_trace_all(
     float** out_t_ptr,    // returned pointer-to-array (malloc'd)
     vec3s** out_points_ptr// returned pointer-to-array (malloc'd)
 );
+
+#ifdef __cplusplus
+}
+#endif
