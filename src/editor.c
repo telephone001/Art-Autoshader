@@ -620,14 +620,15 @@ void editor_render(Editor *editor, int in_ecam_view, mat4 projection, mat4 view)
     cam_plane_mdl_render(&(editor->mdl_cam_plane), in_ecam_view, projection, view);
 
 
+    mat4 iden = GLM_MAT4_IDENTITY_INIT;
     //
     // Heightmap rendering
     //
     if (in_ecam_view == 0) {
-        hmap_render(&(editor->hmap_rd), editor->hmap_l, in_ecam_view, projection, view, editor->hmap_transform.matrix);
+        hmap_render(&(editor->hmap_rd), editor->hmap_l, in_ecam_view, projection, view, iden );
     } else {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        hmap_render(&(editor->hmap_rd), editor->hmap_l, in_ecam_view, projection, view, editor->hmap_transform.matrix);
+        hmap_render(&(editor->hmap_rd), editor->hmap_l, in_ecam_view, projection, view, iden );
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
 }

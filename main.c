@@ -328,7 +328,7 @@ int main()
                         }
                 }
 
-                // delete editor
+                // delete editor AND light sources
                 if (debug_thing == 2) {
                         for (int i = 0; i < MAX_EDITORS; i++) {
                                 //Required before editor_free if gui_menu is using the texture.
@@ -337,6 +337,10 @@ int main()
                                         editors[i].mdl_cam_plane.textures[0] = 0;
                                 }
                                 editor_free(&(editors[i]));
+                        }
+
+                        for (int i = 0; i < MAX_LIGHT_SOURCES; i++) {
+                                light_sources_data.lights[i] = (LightSource){0};
                         }
 
                         debug_thing = 0;
@@ -360,25 +364,34 @@ int main()
                         //array of rays
                         vec3s *cam_dirs = ht_generate_camera_directions(&camera, width, height);
 
-                        for (int i = 0; i < height; i++) {
-                                for (int j = 0; j < width; j++) {
-                                        //how far the ray goes
-                                        float t_ray;
-                                        vec3s point;
 
-                                        int shot = ht_intersect_heightmap_ray(
-                                            editors[0].hmap, editors[0].hmap_w, editors[0].hmap_l, camera.pos, cam_dirs[i*width + j],
-                                            0.1, 10, &t_ray, &point);
-                                        
-                                                
-                                        if (shot != 0) {
-                                                vec3s point2 = camera.pos;
-                                                vec3s tmp = glms_vec3_scale(cam_dirs[i * height + j], t_ray);
-                                                point2 = glms_vec3_add(camera.pos, tmp);
-                                                light_source_add(&light_sources_data, (LightSource){POINT, point2, 0.05});
+                        for (int i = 0; i < width; i++) {
+                                for (int j = 0; j < height; j++) {
+                                        if ((j % 40 == 0 && i % 40 == 0) ||
+                                                j==0 || i==0 || i==width-1 ||j==height-1) {
+                                                light_source_add(&light_sources_data, (LightSource){DIRECTIONAL, glms_vec3_add(camera.pos, glms_vec3_scale(cam_dirs[i*width + j],-5)), 0.1});
                                         }
                                 }
                         }
+                        //for (int i = 0; i < height; i++) {
+                        //        for (int j = 0; j < width; j++) {
+                        //                //how far the ray goes
+                        //                float t_ray;
+                        //                vec3s point;
+                        //                int shot = ht_intersect_heightmap_ray(
+                        //                    editors[0].hmap, editors[0].hmap_w, editors[0].hmap_l, camera.pos, cam_dirs[i*width + j],
+                        //                    0.1, 10, &t_ray, &point);
+                        //                
+                        //                        
+                        //                if (shot != 0) {
+                        //                        printf("SHOT");
+                        //                        vec3s point2 = camera.pos;
+                        //                        vec3s tmp = glms_vec3_scale(cam_dirs[i * height + j], t_ray);
+                        //                        point2 = glms_vec3_add(camera.pos, tmp);
+                        //                        light_source_add(&light_sources_data, (LightSource){POINT, point2, 0.05});
+                        //                }
+                        //        }
+                        //}
 
                         free(cam_dirs);
 

@@ -8,7 +8,7 @@
 #include "glfw_window.h"
 
 
-#define MAX_LIGHT_SOURCES 1000
+#define MAX_LIGHT_SOURCES 200*200
 
 typedef enum LightType {
         NONE,           //this is only here to check if a light source entry in the array is valid
