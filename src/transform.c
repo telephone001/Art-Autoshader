@@ -23,22 +23,22 @@ void transform_init(Transform* t) {
    Build TRS matrix into 'out'
 --------------------------------------------------------- */
 
-void transform_get_matrix(const Transform* t, mat4 out) {
+void transform_get_matrix(const Transform* t, mat4 out)
+{
     mat4 T, R, S;
 
-    // Temporary writable vec3 copies
     vec3 tr = { t->translation[0], t->translation[1], t->translation[2] };
     vec3 rot = { t->rotation[0], t->rotation[1], t->rotation[2] };
-    vec3 sc = { t->scale[0], t->scale[1], t->scale[2] };
+    vec3 sc  = { t->scale[0],      t->scale[1],      t->scale[2]      };
 
-    glm_translate_make(T, tr);
-    glm_euler_xyz(rot, R);
-    glm_scale_make(S, sc);
+    glm_translate_make(T, tr);   // T = translation
+    glm_euler_xyz(rot, R);       // R = rotation
+    glm_scale_make(S, sc);       // S = scale
 
-    // cglm requires an array of mat4*
     mat4* mats[3] = { &T, &R, &S };
     glm_mat4_mulN(mats, 3, out);
 }
+
 
 /* ---------------------------------------------------------
    Update t->matrix using TRS stored inside transform
