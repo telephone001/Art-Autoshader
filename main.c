@@ -309,7 +309,7 @@ int main()
                                 100  // PLACHOLDER
                         );
                         
-                        hmap_edit_zero(&(editors[cnt]));
+                        hmap_edit_sinc(&(editors[cnt]));
 
 
                         if (err < 0) {

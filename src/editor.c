@@ -486,9 +486,58 @@ int editor_init(
         editor->cam = camera;     //copy the current camera into the editor
 
 
-        //Commented it out for now
-	//	transform_init(&editor->hmap_transform);
-	//	editor->hmap_transform.translation[2] = 0.01f;
+        vec3s a = glms_vec3_sub(
+                (vec3s){
+                editor->mdl_cam_plane.vertices[5 + 0],
+                editor->mdl_cam_plane.vertices[5 + 1],
+                editor->mdl_cam_plane.vertices[5 + 2]
+                },
+                (vec3s){
+                editor->mdl_cam_plane.vertices[0 + 0],
+                editor->mdl_cam_plane.vertices[0 + 1],
+                editor->mdl_cam_plane.vertices[0 + 2]
+                }
+        );
+
+        vec3s b = glms_vec3_sub(
+                (vec3s){
+                editor->mdl_cam_plane.vertices[10 + 0],
+                editor->mdl_cam_plane.vertices[10 + 1],
+                editor->mdl_cam_plane.vertices[10 + 2]
+                },
+                (vec3s){
+                editor->mdl_cam_plane.vertices[0 + 0],
+                editor->mdl_cam_plane.vertices[0 + 1],
+                editor->mdl_cam_plane.vertices[0 + 2]
+                }
+        );
+
+        //the normal vector of the plane
+        vec3s normal = glms_vec3_cross(a,b);
+        normal = glms_vec3_normalize(normal);
+
+        //x vector corresponds to width (also -1 is needed cuz points start at 0 and end at w-1)
+        editor->hmap_transform.matrix[0][0] = a.x / (editor->hmap_w - 1);
+        editor->hmap_transform.matrix[1][0] = a.y / (editor->hmap_w - 1);
+        editor->hmap_transform.matrix[2][0] = a.z / (editor->hmap_w - 1);
+
+        //z vector corresponds to length (also -1 is needed cuz points start at 0 and end at l-1)
+        editor->hmap_transform.matrix[0][2] = b.x  / (editor->hmap_l - 1);
+        editor->hmap_transform.matrix[1][2] = b.y  / (editor->hmap_l - 1);
+        editor->hmap_transform.matrix[2][2] = b.z  / (editor->hmap_l - 1);
+
+        //the height (y) grows opposite to cam_dir
+        editor->hmap_transform.matrix[0][1] = normal.x;
+        editor->hmap_transform.matrix[1][1] = normal.y;
+        editor->hmap_transform.matrix[2][1] = normal.z;
+
+        //translation
+        editor->hmap_transform.matrix[0][3] = editor->mdl_cam_plane.vertices[0 + 0];
+        editor->hmap_transform.matrix[1][3] = editor->mdl_cam_plane.vertices[0 + 1];
+        editor->hmap_transform.matrix[2][3] = editor->mdl_cam_plane.vertices[0 + 2];
+
+        editor->hmap_transform.matrix[3][3] = 1;
+
         return 0;
 }
 
@@ -601,44 +650,17 @@ void editor_render(Editor *editor, int in_ecam_view, mat4 projection, mat4 view)
     mat4 model = GLM_MAT4_IDENTITY_INIT;
 
     // Pointer to projected-model vertices (these are already world-space positions)
-    float *proj_verts = editor->mdl_cam_proj.vertices;
+    float *plane_verts = editor->mdl_cam_plane.vertices;
 
-    if (proj_verts != NULL)
-    {
-        // Local (but already world-space) plane corners
-        vec3 worldPlanePts[4];
-
-        // proj_verts layout (groups of 3 floats):
-        // [0..2]   = camera center
-        // [3..5]   = bottom-left
-        // [6..8]   = bottom-right
-        // [9..11]  = top-left
-        // [12..14] = top-right
-
-        // Build worldPlanePts in order expected by hmap_transform_from_plane: {TL, TR, BR, BL}
-        worldPlanePts[0][0] = proj_verts[9];  worldPlanePts[0][1] = proj_verts[10]; worldPlanePts[0][2] = proj_verts[11]; // TL
-        worldPlanePts[1][0] = proj_verts[12]; worldPlanePts[1][1] = proj_verts[13]; worldPlanePts[1][2] = proj_verts[14]; // TR
-        worldPlanePts[2][0] = proj_verts[6];  worldPlanePts[2][1] = proj_verts[7];  worldPlanePts[2][2] = proj_verts[8];  // BR
-        worldPlanePts[3][0] = proj_verts[3];  worldPlanePts[3][1] = proj_verts[4];  worldPlanePts[3][2] = proj_verts[5];  // BL
-
-        // Initialize / reset the heightmap transform
-        transform_init(&editor->hmap_transform);
-
-        // Compute the mapping matrix that places the heightmap grid on the plane (worldPlanePts are world-space)
-        hmap_transform_from_plane(&editor->hmap_transform, worldPlanePts, editor->hmap_w, editor->hmap_l);
-
-        // Build final model matrix for OpenGL (from TRS stored in the Transform)
-        transform_get_matrix(&editor->hmap_transform, model);
-    }
-
+    
     //
     // Render heightmap
     //
     if (in_ecam_view == 0) {
-        hmap_render(&(editor->hmap_rd), editor->hmap_l, in_ecam_view, projection, view, model);
+        hmap_render(&(editor->hmap_rd), editor->hmap_l, in_ecam_view, projection, view, editor->hmap_transform.matrix);
     } else {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        hmap_render(&(editor->hmap_rd), editor->hmap_l, in_ecam_view, projection, view, model);
+        hmap_render(&(editor->hmap_rd), editor->hmap_l, in_ecam_view, projection, view, editor->hmap_transform.matrix);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
 }

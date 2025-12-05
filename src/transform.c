@@ -78,7 +78,7 @@ void hmap_transform_from_plane(
     // Compute two vectors along the plane edges from the origin corner
     vec3 uVec, vVec;
     glm_vec3_sub(planePts[1], planePts[0], uVec); // width direction
-    glm_vec3_sub(planePts[3], planePts[0], vVec); // height direction
+    glm_vec3_sub(planePts[2], planePts[0], vVec); // height direction
 
     // Step size for each heightmap cell
     vec3 uStep, vStep;
@@ -115,3 +115,4 @@ void hmap_transform_from_plane(
     // Translation (origin)
     glm_vec3_copy(planePts[0], t->matrix[3]);
 }
+
