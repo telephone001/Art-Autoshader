@@ -550,7 +550,7 @@ void hmap_render(RenderData *hmap_rdata, int hmap_row_len, int in_ecam_view, mat
         glUniform1i(glGetUniformLocation(hmap_rdata->shader, "in_ecam_view"), in_ecam_view);
 
         GLint modelLoc = glGetUniformLocation(hmap_rdata->shader, "model");
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, (float*)model);
+        glUniformMatrix4fv(modelLoc, 1, GL_TRUE, (float*)model);
 
 
         glUniformMatrix4fv(glGetUniformLocation(hmap_rdata->shader, "view"), 1, GL_FALSE, (float*)view);
