@@ -513,6 +513,15 @@ void cam_plane_mdl_render(RenderData *cam_plane_rdata, int in_ecam_view, mat4 pr
 
 
 	glDrawElements(cam_plane_rdata->primitive_type, cam_plane_rdata->indices_length, GL_UNSIGNED_INT, 0);
+		printf("cam_plane verts:\n");
+	for (int i = 0; i < 12; i += 3) {
+	    printf("  (%f, %f, %f)\n",
+	        editor->mdl_cam_plane.vertices[i+0],
+	        editor->mdl_cam_plane.vertices[i+1],
+	        editor->mdl_cam_plane.vertices[i+2]
+	    );
+	}
+
 }
 
 
