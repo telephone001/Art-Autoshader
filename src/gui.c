@@ -275,8 +275,6 @@ static void state_main_render(MenuOptions *const gui_menu)
 }
 
 
-
-
 static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta_time, GLFWwindow *wnd)
 {
 	nk_layout_row_dynamic(gui_menu->ctx, 30, 1);

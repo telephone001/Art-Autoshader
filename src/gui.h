@@ -77,7 +77,7 @@ typedef struct MenuOptions {
         struct nk_image img_nk; //nk handler of the image
         int img_copied; //boolean for if the image is being used by cam_proj_mdl (borrowed)
 
-
+        vec2s hmap_selected_point;
 
         EditorCamData ecam_data;  // struct containing all the parts of the editor camera's data required for rendering
 } MenuOptions;

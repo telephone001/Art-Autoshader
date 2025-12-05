@@ -343,6 +343,7 @@ int main()
 
                 // delete editor AND light sources
                 if (debug_thing == DELETE_EVERYTHING) {
+                        cnt = 0;
                         for (int i = 0; i < MAX_EDITORS; i++) {
                                 //Required before editor_free if gui_menu is using the texture.
                                 if (editors[i].mdl_cam_plane.textures != NULL && 
@@ -385,26 +386,6 @@ int main()
                                         }
                                 }
                         }
-                        //for (int i = 0; i < height; i++) {
-                        //        for (int j = 0; j < width; j++) {
-                        //                //how far the ray goes
-                        //                float t_ray;
-                        //                vec3s point;
-                        //                int shot = ht_intersect_heightmap_ray(
-                        //                    editors[0].hmap, editors[0].hmap_w, editors[0].hmap_l, camera.pos, cam_dirs[i*width + j],
-                        //                    0.1, 10, &t_ray, &point);
-                        //                
-                        //                        
-                        //                if (shot != 0) {
-                        //                        printf("SHOT");
-                        //                        vec3s point2 = camera.pos;
-                        //                        vec3s tmp = glms_vec3_scale(cam_dirs[i * height + j], t_ray);
-                        //                        point2 = glms_vec3_add(camera.pos, tmp);
-                        //                        light_source_add(&light_sources_data, (LightSource){POINT, point2, 0.05});
-                        //                }
-                        //        }
-                        //}
-
                         free(cam_dirs);
 
                         debug_thing = DEBUG_NONE;
@@ -419,7 +400,7 @@ int main()
 
                         for (int i = 0; i < height; i++) {
                                 for (int j = 0; j < width; j++) {
-                                        if (j % 50 != 0 || i % 50 != 0) {
+                                        if ((j+25) % 50 != 0 || (i+25) % 50 != 0) {
                                                 continue;
                                         }
 
