@@ -113,6 +113,8 @@ void hmap_transform_from_plane(
     t->matrix[2][2] = vStep[2];
 
     // Translation (origin)
-    glm_vec3_copy(planePts[0], t->matrix[3]);
+    t->matrix[0][3] = planePts[0][0];
+    t->matrix[1][3] = planePts[0][1];
+    t->matrix[2][3] = planePts[0][2];
 }
 

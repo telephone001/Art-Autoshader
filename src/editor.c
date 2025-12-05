@@ -486,57 +486,31 @@ int editor_init(
         editor->cam = camera;     //copy the current camera into the editor
 
 
-        vec3s a = glms_vec3_sub(
-                (vec3s){
-                editor->mdl_cam_plane.vertices[5 + 0],
-                editor->mdl_cam_plane.vertices[5 + 1],
-                editor->mdl_cam_plane.vertices[5 + 2]
-                },
-                (vec3s){
-                editor->mdl_cam_plane.vertices[0 + 0],
-                editor->mdl_cam_plane.vertices[0 + 1],
-                editor->mdl_cam_plane.vertices[0 + 2]
-                }
-        );
+        transform_init(&editor->hmap_transform);
 
-        vec3s b = glms_vec3_sub(
-                (vec3s){
-                editor->mdl_cam_plane.vertices[10 + 0],
-                editor->mdl_cam_plane.vertices[10 + 1],
-                editor->mdl_cam_plane.vertices[10 + 2]
-                },
-                (vec3s){
-                editor->mdl_cam_plane.vertices[0 + 0],
-                editor->mdl_cam_plane.vertices[0 + 1],
-                editor->mdl_cam_plane.vertices[0 + 2]
-                }
-        );
+        vec3 plane_pts[4];
+        
+        plane_pts[0][0] = editor->mdl_cam_plane.vertices[0 + 0];
+        plane_pts[0][1] = editor->mdl_cam_plane.vertices[0 + 1];
+        plane_pts[0][2] = editor->mdl_cam_plane.vertices[0 + 2];
+        
+        plane_pts[1][0] = editor->mdl_cam_plane.vertices[5 + 0];
+        plane_pts[1][1] = editor->mdl_cam_plane.vertices[5 + 1];
+        plane_pts[1][2] = editor->mdl_cam_plane.vertices[5 + 2];
+         
+        plane_pts[2][0] = editor->mdl_cam_plane.vertices[10 + 0];
+        plane_pts[2][1] = editor->mdl_cam_plane.vertices[10 + 1];
+        plane_pts[2][2] = editor->mdl_cam_plane.vertices[10 + 2];
+         
+        plane_pts[3][0] = editor->mdl_cam_plane.vertices[15 + 0];
+        plane_pts[3][1] = editor->mdl_cam_plane.vertices[15 + 1];
+        plane_pts[3][2] = editor->mdl_cam_plane.vertices[15 + 2];
 
-        //the normal vector of the plane
-        vec3s normal = glms_vec3_cross(a,b);
-        normal = glms_vec3_normalize(normal);
-
-        //x vector corresponds to width (also -1 is needed cuz points start at 0 and end at w-1)
-        editor->hmap_transform.matrix[0][0] = a.x / (editor->hmap_w - 1);
-        editor->hmap_transform.matrix[1][0] = a.y / (editor->hmap_w - 1);
-        editor->hmap_transform.matrix[2][0] = a.z / (editor->hmap_w - 1);
-
-        //z vector corresponds to length (also -1 is needed cuz points start at 0 and end at l-1)
-        editor->hmap_transform.matrix[0][2] = b.x  / (editor->hmap_l - 1);
-        editor->hmap_transform.matrix[1][2] = b.y  / (editor->hmap_l - 1);
-        editor->hmap_transform.matrix[2][2] = b.z  / (editor->hmap_l - 1);
-
-        //the height (y) grows opposite to cam_dir
-        editor->hmap_transform.matrix[0][1] = normal.x;
-        editor->hmap_transform.matrix[1][1] = normal.y;
-        editor->hmap_transform.matrix[2][1] = normal.z;
-
-        //translation
-        editor->hmap_transform.matrix[0][3] = editor->mdl_cam_plane.vertices[0 + 0];
-        editor->hmap_transform.matrix[1][3] = editor->mdl_cam_plane.vertices[0 + 1];
-        editor->hmap_transform.matrix[2][3] = editor->mdl_cam_plane.vertices[0 + 2];
 
         editor->hmap_transform.matrix[3][3] = 1;
+
+        hmap_transform_from_plane(&editor->hmap_transform, plane_pts, editor->hmap_w, editor->hmap_l);
+
 
         return 0;
 }
@@ -562,6 +536,7 @@ void cam_plane_mdl_render(RenderData *cam_plane_rdata, int in_ecam_view, mat4 pr
 
 
 	glDrawElements(cam_plane_rdata->primitive_type, cam_plane_rdata->indices_length, GL_UNSIGNED_INT, 0);
+
 }
 
 
@@ -637,24 +612,16 @@ static void transform_plane_points(mat4 m, vec3 inPts[4], vec3 outPts[4])
 void editor_render(Editor *editor, int in_ecam_view, mat4 projection, mat4 view)
 {
     if (in_ecam_view == 0) {
-        // we render yellow wireframes in freefly mode
+        // Render yellow projection wireframe in freefly mode
         cam_proj_mdl_render(&(editor->mdl_cam_proj), projection, view);
     }
 
-    // there is no need to make an editor mode for cam plane because it is always orthogonal to the camera
+    // Render the camera plane (always orthogonal to the camera)
     cam_plane_mdl_render(&(editor->mdl_cam_plane), in_ecam_view, projection, view);
 
-    //
-    // Heightmap model transform
-    //
-    mat4 model = GLM_MAT4_IDENTITY_INIT;
 
-    // Pointer to projected-model vertices (these are already world-space positions)
-    float *plane_verts = editor->mdl_cam_plane.vertices;
-
-    
     //
-    // Render heightmap
+    // Heightmap rendering
     //
     if (in_ecam_view == 0) {
         hmap_render(&(editor->hmap_rd), editor->hmap_l, in_ecam_view, projection, view, editor->hmap_transform.matrix);
@@ -664,6 +631,7 @@ void editor_render(Editor *editor, int in_ecam_view, mat4 projection, mat4 view)
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
 }
+
 
 
 /// @brief frees the data of an editor 

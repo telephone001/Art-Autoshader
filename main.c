@@ -376,8 +376,6 @@ int main()
                                                 vec3s tmp = glms_vec3_scale(cam_dirs[i * height + j], t_ray);
                                                 point2 = glms_vec3_add(camera.pos, tmp);
                                                 light_source_add(&light_sources_data, (LightSource){POINT, point2, 0.05});
-
-                                                printf("%f %f %f\n", point2.x, point2.y, point2.z);
                                         }
                                 }
                         }
@@ -387,7 +385,6 @@ int main()
                         debug_thing = 0;
                 }
 
-                printf("%f %f %f\n", camera.pos.x, camera.pos.y, camera.pos.z);
 
                 //Render the editors
                 glEnable(GL_DEPTH_TEST);
