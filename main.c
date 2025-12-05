@@ -155,11 +155,7 @@ void key_callback_menu_switching(
                 if (key == GLFW_KEY_2 && action == GLFW_PRESS) {
                         debug_thing = 4;
                 }
-                if (key == GLFW_KEY_5 && action == GLFW_PRESS) {
-                        debug_thing = 5;
-                        printf("Debug 5 triggered!\n");
-                }
-
+                if (key == GLFW_KEY_5 && action == GLFW_PRESS) debug_thing = 5;
 	}
 
         //these are required because the only other alternative would be global variables.
@@ -357,51 +353,65 @@ int main()
                         debug_thing = 0;
                 }
                 
-                // ===== RAYTRACING TIME =====
+                // RAYTRACING TIME !  ! !
                 if (debug_thing == 5 && editors[0].mdl_cam_proj.vao != 0 ) {
-                int width, height;
-                glfwGetWindowSize(wnd, &width, &height);
+                        int width, height;
+	                glfwGetWindowSize(wnd, &width, &height);
+                        //array of rays
+                        vec3s *cam_dirs = ht_generate_camera_directions(&camera, width, height);
 
-                // ===== 1️⃣ Position camera above map and look down =====
-                camera.pos   = (vec3s){ 50.0f, 20.0f, 50.0f };   // Adjust according to your map size
-                camera.front = (vec3s){ 0.0f, -1.0f, 0.0f };    // Look straight down
-                camera.up    = (vec3s){ 0.0f, 0.0f, -1.0f };    // Set a proper up
-                camera.right = (vec3s){ 1.0f, 0.0f, 0.0f };     // Right vector
+                        for (int i = 0; i < height; i++) {
+                                for (int j = 0; j < width; j++) {
+                                        //how far the ray goes
+                                        float t_ray;
+                                        vec3s point;
 
-                // ===== 2️⃣ Generate rays for each pixel =====
-                vec3s *cam_dirs = ht_generate_camera_directions(&camera, width, height);
+                                        int shot = ht_intersect_heightmap_ray(
+                                            editors[0].hmap, editors[0].hmap_w, editors[0].hmap_l, camera.pos, cam_dirs[i*width + j],
+                                            0.1, 10, &t_ray, &point);
+                                        
+                                                
+                                        if (shot != 0) {
+                                                vec3s point2 = camera.pos;
+                                                vec3s tmp = glms_vec3_scale(cam_dirs[i * height + j], t_ray);
+                                                point2 = glms_vec3_add(camera.pos, tmp);
+                                                light_source_add(&light_sources_data, (LightSource){POINT, point2, 0.05});
 
-                // ===== 3️⃣ Trace rays =====
-                for (int i = 0; i < height; i++) {
-                        for (int j = 0; j < width; j++) {
-                        float t_ray;
-                        vec3s hit_point;
-
-                        // ✅ Correct indexing: i*width + j
-                        int hit = ht_intersect_heightmap_ray(
-                                editors[0].hmap, editors[0].hmap_w, editors[0].hmap_l,
-                                camera.pos, cam_dirs[i*width + j],
-                                0.1f, 100.0f, // step and max distance
-                                &t_ray, &hit_point
-                        );
-
-                        if (hit) {
-                                vec3s point2 = glms_vec3_add(camera.pos, glms_vec3_scale(cam_dirs[i*width + j], t_ray));
-                                light_source_add(&light_sources_data, (LightSource){DIRECTIONAL, point2, 1});
-                                printf("Hit: %f %f %f\n", point2.x, point2.y, point2.z);
+                                                printf("%f %f %f\n", point2.x, point2.y, point2.z);
+                                        }
+                                }
                         }
-                        }
+
+                        free(cam_dirs);
+
+                        debug_thing = 0;
                 }
 
-                free(cam_dirs);
-                debug_thing = 0;
+                printf("%f %f %f\n", camera.pos.x, camera.pos.y, camera.pos.z);
+
+                //Render the editors
+                glEnable(GL_DEPTH_TEST);
+                glDepthFunc(GL_LESS);
+                
+                for (int i = 0; i < MAX_EDITORS; i++) {
+                        if (editors[i].mdl_cam_proj.vao != 0 ) {
+                                editor_render(&(editors[i]), 0, flycam_projection, flycam_view);
+                        }
                 }
-
-
+                
 ///////////////////////////////// TESTS ON FRAMEBUFFER ////////////////////////////////////
+                GLint window_w, window_h;
+                glfwGetWindowSize(wnd, &window_w, &window_h); // Get main window size for restore
                 glBindFramebuffer(GL_FRAMEBUFFER, gui_menu.ecam_data.fbo);
 
                 
+                // *** CRITICAL FIX: Set Viewport to Framebuffer/Texture Size ***
+                // Assuming gui_menu.ecam_data holds the dimensions of the framebuffer texture.
+                // Replace these placeholders with the correct fields if necessary.
+                glViewport(0, 0, gui_menu.ecam_data.width, gui_menu.ecam_data.height); 
+ 
+                // Use the standard clear color (dark blue) to confirm if the clear worked.
+                glClearColor(0.1, 0.2, 0.3, 1.0);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
                 Camera editor_cam = camera;
@@ -412,13 +422,11 @@ int main()
 
                 vec3s ofr = glms_vec3_scale(editor_cam.right, ofx);
                 vec3s ofu = glms_vec3_scale(editor_cam.up, ofy);
-
                 editor_cam.pos = glms_vec3_add(editor_cam.pos, ofr);
                 editor_cam.pos = glms_vec3_add(editor_cam.pos, ofu);
 
                 get_cam_view(editor_cam, offset_view); 
 
-                
 
                 for (int i = 0; i < MAX_EDITORS; i++) {
                         if (editors[i].mdl_cam_proj.vao != 0 ) {
@@ -432,6 +440,9 @@ int main()
                 }
 
                 glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+                // *** CRITICAL FIX: Restore Viewport to Main Window Size ***
+                glViewport(0, 0, window_w, window_h);
 
 ///////////////////////////////// TESTS ON FRAMEBUFFER ////////////////////////////////////
 
