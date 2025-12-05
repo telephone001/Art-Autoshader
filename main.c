@@ -39,8 +39,17 @@ extern Camera camera; //handler for cameradata;
 extern int in_menu;   //menu status
 
 
-int debug_thing = 0; // TODO  REMOVE IN FINAL PRODUCT
+typedef enum DebugThing {
+        DEBUG_NONE,
+        SPAWN_EDITOR,
+        DELETE_EVERYTHING,
+        SPAWN_POINT_LIGHT,
+        SPAWN_DIRECTIONAL_LIGHT,
+        SPAWN_LIGHTS_FOR_CAMERA_RAYS,
+        SPAWN_LIGHTS_FOR_INTERSECTIONS,
+} DebugThing;
 
+DebugThing debug_thing = 0; // TODO  REMOVE IN FINAL PRODUCT
 
 //TODO these are only in global because I dont want to send a window hint pointer to callback
 
@@ -140,22 +149,26 @@ void key_callback_menu_switching(
 	        	}
 	        }
 
-                if (key == GLFW_KEY_P && action == GLFW_PRESS) {
-                        debug_thing = 1;
-                }
+                if (key == GLFW_KEY_P && action == GLFW_PRESS) 
+                        debug_thing = SPAWN_EDITOR;
+                
 
-                if (key == GLFW_KEY_L && action == GLFW_PRESS) {
-                        debug_thing = 2;
-                }
+                if (key == GLFW_KEY_L && action == GLFW_PRESS) 
+                        debug_thing = DELETE_EVERYTHING;
+                
 
-                if (key == GLFW_KEY_1 && action == GLFW_PRESS) {
-                        debug_thing = 3;
-                }
+                if (key == GLFW_KEY_1 && action == GLFW_PRESS) 
+                        debug_thing = SPAWN_POINT_LIGHT;
+                
 
-                if (key == GLFW_KEY_2 && action == GLFW_PRESS) {
-                        debug_thing = 4;
-                }
-                if (key == GLFW_KEY_5 && action == GLFW_PRESS) debug_thing = 5;
+                if (key == GLFW_KEY_2 && action == GLFW_PRESS) 
+                        debug_thing = SPAWN_DIRECTIONAL_LIGHT;
+                
+                if (key == GLFW_KEY_5 && action == GLFW_PRESS) 
+                        debug_thing = SPAWN_LIGHTS_FOR_CAMERA_RAYS;
+
+                if (key == GLFW_KEY_6 && action == GLFW_PRESS)
+                        debug_thing = SPAWN_LIGHTS_FOR_INTERSECTIONS;
 	}
 
         //these are required because the only other alternative would be global variables.
@@ -289,7 +302,7 @@ int main()
 		
 
                 // If debug thing is 1, we make an editor
-                if (debug_thing == 1) {
+                if (debug_thing == SPAWN_EDITOR) {
 
                         // WARNING:  EDITOR DOESNT DO REFERENCE COUNTING FOR ALLOCATED TEXTURES
                         //Required before editor_free if gui_menu is using the texture.
@@ -320,7 +333,7 @@ int main()
                                 }
                                 editor_free(&(editors[cnt]));
                         }
-                        debug_thing = 0;
+                        debug_thing = DEBUG_NONE;
                         cnt++;
 
                         if (cnt >= MAX_EDITORS) {
@@ -329,7 +342,7 @@ int main()
                 }
 
                 // delete editor AND light sources
-                if (debug_thing == 2) {
+                if (debug_thing == DELETE_EVERYTHING) {
                         for (int i = 0; i < MAX_EDITORS; i++) {
                                 //Required before editor_free if gui_menu is using the texture.
                                 if (editors[i].mdl_cam_plane.textures != NULL && 
@@ -343,22 +356,22 @@ int main()
                                 light_sources_data.lights[i] = (LightSource){0};
                         }
 
-                        debug_thing = 0;
+                        debug_thing = DEBUG_NONE;
                 }
 
-                if (debug_thing == 3) {
+                if (debug_thing == SPAWN_POINT_LIGHT) {
                         //TODO check this error
                         light_source_add(&light_sources_data, (LightSource){POINT, camera.pos, 0.5});
-                        debug_thing = 0;
+                        debug_thing = DEBUG_NONE;
                 }
 
-                if (debug_thing == 4) {
+                if (debug_thing == SPAWN_DIRECTIONAL_LIGHT) {
                         light_source_add(&light_sources_data, (LightSource){DIRECTIONAL, camera.pos, 1});
-                        debug_thing = 0;
+                        debug_thing = DEBUG_NONE;
                 }
                 
                 // RAYTRACING TIME !  ! !
-                if (debug_thing == 5 && editors[0].mdl_cam_proj.vao != 0 ) {
+                if (debug_thing == SPAWN_LIGHTS_FOR_CAMERA_RAYS) {
                         int width, height;
 	                glfwGetWindowSize(wnd, &width, &height);
                         //array of rays
@@ -367,9 +380,8 @@ int main()
 
                         for (int i = 0; i < width; i++) {
                                 for (int j = 0; j < height; j++) {
-                                        if ((j % 40 == 0 && i % 40 == 0) ||
-                                                j==0 || i==0 || i==width-1 ||j==height-1) {
-                                                light_source_add(&light_sources_data, (LightSource){DIRECTIONAL, glms_vec3_add(camera.pos, glms_vec3_scale(cam_dirs[i*width + j],-5)), 0.1});
+                                        if (((j + 10) % 20 == 0 && (i + 10) % 20 == 0)) {
+                                                light_source_add(&light_sources_data, (LightSource){DIRECTIONAL, glms_vec3_add(camera.pos, glms_vec3_scale(cam_dirs[i*width + j],5)), 0.05});
                                         }
                                 }
                         }
@@ -395,7 +407,43 @@ int main()
 
                         free(cam_dirs);
 
-                        debug_thing = 0;
+                        debug_thing = DEBUG_NONE;
+                }
+
+                if (debug_thing == SPAWN_LIGHTS_FOR_INTERSECTIONS) {
+                        int width, height;
+	                glfwGetWindowSize(wnd, &width, &height);
+                        //array of rays
+                        vec3s *cam_dirs = ht_generate_camera_directions(&camera, width, height);
+
+
+                        for (int i = 0; i < height; i++) {
+                                for (int j = 0; j < width; j++) {
+                                        if (j % 50 != 0 || i % 50 != 0) {
+                                                continue;
+                                        }
+
+                                        //how far the ray goes
+                                        float t_ray;
+                                        vec3s point;
+                                        int shot = ht_intersect_heightmap_ray(
+                                            editors[0].hmap, editors[0].hmap_w, editors[0].hmap_l, camera.pos, cam_dirs[i*width + j],
+                                            0.1, 500, &t_ray, &point);
+                                        
+                                                
+                                        if (shot != 0) {
+                                                printf("SHOT\n");
+                                                vec3s point2 = camera.pos;
+                                                vec3s tmp = glms_vec3_scale(cam_dirs[i * height + j], t_ray);
+                                                point2 = glms_vec3_add(camera.pos, tmp);
+                                                light_source_add(&light_sources_data, (LightSource){POINT, point2, 1});
+                                        }
+                                }
+                        }
+
+                        free(cam_dirs);
+
+                        debug_thing = DEBUG_NONE;
                 }
 
 

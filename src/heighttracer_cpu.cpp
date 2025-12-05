@@ -58,13 +58,12 @@ vec3s* ht_generate_camera_directions(const Camera* cam, int screenW, int screenH
             // camera space direction
             float cam_x = ndc_x * aspect * tanFov;
             float cam_y = ndc_y * tanFov;
-            float cam_z = -1.0f; // looking down -Z in camera space
 
             // world dir = forward*cam_z + right*cam_x + up*cam_y
             vec3s dir;
-            dir.x = forward.x * cam_z + right.x * cam_x + up.x * cam_y;
-            dir.y = forward.y * cam_z + right.y * cam_x + up.y * cam_y;
-            dir.z = forward.z * cam_z + right.z * cam_x + up.z * cam_y;
+            dir.x = forward.x + right.x * cam_x + up.x * cam_y;
+            dir.y = forward.y + right.y * cam_x + up.y * cam_y;
+            dir.z = forward.z + right.z * cam_x + up.z * cam_y;
 
             vec3s_normalize_inplace(&dir);
             dirs[idx] = dir;
