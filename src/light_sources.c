@@ -1,4 +1,3 @@
-
 #include "light_sources.h"
 
 extern Camera camera;
@@ -10,73 +9,87 @@ extern Camera camera;
 /// @return 0 on error
 int light_sources_render(LightSourcesData *light_sources, mat4 projection, mat4 view)
 {
+    // --- State Setup for Billboards ---
 
-        glUseProgram(light_sources->rd.shader);
-	glBindVertexArray(light_sources->rd.vao);
+    // 1. Enable Blending for transparency of the light marker texture
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
+    // 2. IMPORTANT FIX: Prevent writing to the depth buffer (Z-Buffer).
+    // This stops the markers from corrupting depth and causing the red block issue.
+    glDepthMask(GL_FALSE);
 
-        //These uniforms remain the same for all light sources
-        glUniform3fv(
-                glGetUniformLocation(light_sources->rd.shader, "cam_right"), 
-                1, 
-                camera.right.raw
-        );
+    glUseProgram(light_sources->rd.shader);
+    glBindVertexArray(light_sources->rd.vao);
 
-        glUniform3fv(
-                glGetUniformLocation(light_sources->rd.shader, "cam_up"), 
-                1, 
-                camera.up.raw
-        );
+    //These uniforms remain the same for all light sources
+    glUniform3fv(
+            glGetUniformLocation(light_sources->rd.shader, "cam_right"), 
+            1, 
+            camera.right.raw
+    );
 
-        glUniform3fv(
-                glGetUniformLocation(light_sources->rd.shader, "cam_pos"), 
-                1, 
-                camera.pos.raw
-        );
+    glUniform3fv(
+            glGetUniformLocation(light_sources->rd.shader, "cam_up"), 
+            1, 
+            camera.up.raw
+    );
 
-        glUniformMatrix4fv(glGetUniformLocation(light_sources->rd.shader, "view"), 1, GL_FALSE, (float*)view);
-        glUniformMatrix4fv(glGetUniformLocation(light_sources->rd.shader, "projection"), 1, GL_FALSE, (float*)projection);
+    glUniform3fv(
+            glGetUniformLocation(light_sources->rd.shader, "cam_pos"), 
+            1, 
+            camera.pos.raw
+    );
 
-
-        //bind 2 texture units TODO:
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, light_sources->rd.textures[POINT - 1]);
-
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, light_sources->rd.textures[DIRECTIONAL - 1]);
+    glUniformMatrix4fv(glGetUniformLocation(light_sources->rd.shader, "view"), 1, GL_FALSE, (float*)view);
+    glUniformMatrix4fv(glGetUniformLocation(light_sources->rd.shader, "projection"), 1, GL_FALSE, (float*)projection);
 
 
-        //render all light sources 
-        for (int i = 0; i < light_sources->num_lights; i++) {
-                if (light_sources->lights[i].type == NONE) {
-                        continue;
-                }
-                
-                glUniform3fv(
-                        glGetUniformLocation(light_sources->rd.shader, "light_source_pos"), 
-                        1, 
-                        light_sources->lights[i].pos.raw
-                );
+    //bind 2 texture units
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, light_sources->rd.textures[POINT - 1]);
 
-                glUniform1i(
-                        glGetUniformLocation(light_sources->rd.shader, "light_source_type"), 
-                        light_sources->lights[i].type       
-                );
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, light_sources->rd.textures[DIRECTIONAL - 1]);
 
-                glUniform1f(
-                        glGetUniformLocation(light_sources->rd.shader, "scale"), 
-                        light_sources->lights[i].render_size       
-                );
-                
-                //a quad is just 2 triangles
-                glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    //render all light sources 
+    for (int i = 0; i < light_sources->num_lights; i++) {
+        if (light_sources->lights[i].type == NONE) {
+            continue;
         }
+        
+        glUniform3fv(
+                glGetUniformLocation(light_sources->rd.shader, "light_source_pos"), 
+                1, 
+                light_sources->lights[i].pos.raw
+        );
 
-        return 0;
+        glUniform1i(
+                glGetUniformLocation(light_sources->rd.shader, "light_source_type"), 
+                light_sources->lights[i].type      
+        );
+
+        glUniform1f(
+                glGetUniformLocation(light_sources->rd.shader, "scale"), 
+                light_sources->lights[i].render_size      
+        );
+        
+        //a quad is just 2 triangles
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+    }
+
+    // --- State Cleanup ---
+    // Restore depth mask and disable blending
+    glDepthMask(GL_TRUE); 
+    glDisable(GL_BLEND);
+
+    return 0;
 }
 
 
 // renderdata for multiple light sources
-
+// NO CHANGES NEEDED IN THIS FUNCTION
 /// @brief initializes the renderdata for the light sources struct
 /// @param light_sources_rd the light sources renderdata
 /// @param shader the shader for the light sources renderdata
@@ -87,34 +100,34 @@ int light_sources_rd_init(RenderData *light_sources_rd, GLuint shader, GLuint po
 {
         // Remember that light sources doesn't malloc for vertices. vertices is static memory.
         *light_sources_rd = (RenderData) {
-	        
+                
                 // will be filled out below
                 .vao = 0, 
-	        .vbo = 0, 
-	        .ebo = 0, 
+                .vbo = 0, 
+                .ebo = 0, 
 
                 // NO texture coords because the texture coords are the same as the quad position.
-	        .vertices = (float[]){
-		        -1.0, -1.0,
-		        -1.0,  1.0,
-		         1.0, -1.0,
+                .vertices = (float[]){
+                        -1.0, -1.0,
+                        -1.0,  1.0,
+                         1.0, -1.0,
                         
-		         1.0,  1.0,
-		        -1.0,  1.0,
-		         1.0, -1.0,
-	        }, 
-	        .vertices_stride = 2,  
-	        .vertices_length = 2 * 6,
+                         1.0,  1.0,
+                        -1.0,  1.0,
+                         1.0, -1.0,
+                }, 
+                .vertices_stride = 2,  
+                .vertices_length = 2 * 6,
 
-	        .indices = NULL, // NO INDICES
-	        .indices_stride = -1,
-	        .indices_length = -1,
+                .indices = NULL, // NO INDICES
+                .indices_stride = -1,
+                .indices_length = -1,
 
-	        .textures = malloc(2 * sizeof(GLuint)), //you gotta alloc memory so that the menu image isn't the same as the projected image 
-	        .num_textures = 2,   
+                .textures = malloc(2 * sizeof(GLuint)), //you gotta alloc memory so that the menu image isn't the same as the projected image 
+                .num_textures = 2,   
 
-	        .primitive_type = GL_TRIANGLES,
-	        .shader = shader,
+                .primitive_type = GL_TRIANGLES,
+                .shader = shader,
         };
 
 
@@ -141,7 +154,7 @@ int light_sources_rd_init(RenderData *light_sources_rd, GLuint shader, GLuint po
 
         //we dont send texture coords because the texture coords are the same as the quad position.
         glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
+        glEnableVertexAttribArray(0);
         
 
         return 0;
@@ -174,5 +187,3 @@ int light_source_add(LightSourcesData *light_sources_data, LightSource light_sou
 
         return 0;
 }
-
-
