@@ -605,59 +605,36 @@ void editor_render(Editor *editor, int in_ecam_view, mat4 projection, mat4 view)
 	        editor->mdl_cam_plane.vertices[i+2]
 	    );
 	}
-    //
-    // Heightmap model transform
-    //
-    mat4 model = GLM_MAT4_IDENTITY_INIT;
+//
+// Heightmap model transform
+//
+mat4 model = GLM_MAT4_IDENTITY_INIT;
 
-    //
-    // Use PLANE vertices instead of PROJECTION vertices
-    //
-    float *plane_verts = editor->mdl_cam_plane.vertices;
+float *p = editor->mdl_cam_plane.vertices;
 
-    if (plane_verts != NULL)
-    {
-        vec3 worldPlanePts[4];
+if (p != NULL)
+{
+    vec3 worldPlanePts[4];
 
-        //
-        // cam_plane vertex order:
-        //   [0..2]   = BL
-        //   [3..5]   = BR
-        //   [6..8]   = TR
-        //   [9..11]  = TL
-        //
-        // hmap_transform_from_plane expects:  {TL, TR, BR, BL}
-        //
-        worldPlanePts[0][0] = plane_verts[9];
-        worldPlanePts[0][1] = plane_verts[10];
-        worldPlanePts[0][2] = plane_verts[11];   // TL
-
-        worldPlanePts[1][0] = plane_verts[6];
-        worldPlanePts[1][1] = plane_verts[7];
-        worldPlanePts[1][2] = plane_verts[8];    // TR
-
-        worldPlanePts[2][0] = plane_verts[3];
-        worldPlanePts[2][1] = plane_verts[4];
-        worldPlanePts[2][2] = plane_verts[5];    // BR
-
-        worldPlanePts[3][0] = plane_verts[0];
-        worldPlanePts[3][1] = plane_verts[1];
-        worldPlanePts[3][2] = plane_verts[2];    // BL
-
-        // Reset heightmap transform
-        transform_init(&editor->hmap_transform);
-
-        // Build mapping transform from quad → heightmap grid
-        hmap_transform_from_plane(
-            &editor->hmap_transform,
-            worldPlanePts,
-            editor->hmap_w,
-            editor->hmap_l
-        );
-
-        // Build final model matrix
-        transform_get_matrix(&editor->hmap_transform, model);
+    // cam_plane has stride 5: [x, y, z, u, v]
+    // build in order: TL, TR, BR, BL (your hmap_transform_from_plane expects this)
+    for (int i = 0; i < 4; i++) {
+        worldPlanePts[i][0] = p[i*5 + 0];
+        worldPlanePts[i][1] = p[i*5 + 1];
+        worldPlanePts[i][2] = p[i*5 + 2];
     }
+
+    transform_init(&editor->hmap_transform);
+
+    hmap_transform_from_plane(
+        &editor->hmap_transform,
+        worldPlanePts,
+        editor->hmap_w,
+        editor->hmap_l
+    );
+
+    transform_get_matrix(&editor->hmap_transform, model);
+}
 
     //
     // Heightmap rendering
