@@ -26,6 +26,14 @@
 #include <cglm/struct.h>
 #include <cglm/io.h>
 
+#ifdef __CUDACC__
+
+#include "src/heighttracer_cpu.h"
+#include "src/heighttracer_cuda.cuh"
+
+#endif
+
+
 
 #define SCR_LENGTH 800
 #define SCR_HEIGHT 800
@@ -47,6 +55,8 @@ typedef enum DebugThing {
         SPAWN_DIRECTIONAL_LIGHT,
         SPAWN_LIGHTS_FOR_CAMERA_RAYS,
         SPAWN_LIGHTS_FOR_INTERSECTIONS,
+        CPU_TEST_RAYTRACE,
+        CUDA_TEST_RAYTRACE
 } DebugThing;
 
 DebugThing debug_thing = 0; // TODO  REMOVE IN FINAL PRODUCT
@@ -60,6 +70,12 @@ mat4 offset_view;
 mat4 ortho_proj; //used to actually edit the heightmap
 
 
+// Convenience macros for edbert
+#define V3_X(v) ((v).raw[0])
+#define V3_Y(v) ((v).raw[1])
+#define V3_Z(v) ((v).raw[2])
+#define V2_X(v) ((v).raw[0])
+#define V2_Y(v) ((v).raw[1])
 
 /// @brief 
 void opengl_settings_init()
@@ -149,26 +165,12 @@ void key_callback_menu_switching(
 	        	}
 	        }
 
-                if (key == GLFW_KEY_P && action == GLFW_PRESS) 
-                        debug_thing = SPAWN_EDITOR;
-                
-
-                if (key == GLFW_KEY_L && action == GLFW_PRESS) 
-                        debug_thing = DELETE_EVERYTHING;
-                
-
-                if (key == GLFW_KEY_1 && action == GLFW_PRESS) 
-                        debug_thing = SPAWN_POINT_LIGHT;
-                
-
-                if (key == GLFW_KEY_2 && action == GLFW_PRESS) 
-                        debug_thing = SPAWN_DIRECTIONAL_LIGHT;
-                
-                if (key == GLFW_KEY_5 && action == GLFW_PRESS) 
-                        debug_thing = SPAWN_LIGHTS_FOR_CAMERA_RAYS;
-
-                if (key == GLFW_KEY_6 && action == GLFW_PRESS)
-                        debug_thing = SPAWN_LIGHTS_FOR_INTERSECTIONS;
+                if (key == GLFW_KEY_P && action == GLFW_PRESS) debug_thing = SPAWN_EDITOR;
+                if (key == GLFW_KEY_L && action == GLFW_PRESS) debug_thing = DELETE_EVERYTHING;
+                if (key == GLFW_KEY_1 && action == GLFW_PRESS) debug_thing = SPAWN_POINT_LIGHT;
+                if (key == GLFW_KEY_2 && action == GLFW_PRESS) debug_thing = SPAWN_DIRECTIONAL_LIGHT;
+                if (key == GLFW_KEY_5 && action == GLFW_PRESS) debug_thing = CPU_TEST_RAYTRACE;
+                if (key == GLFW_KEY_6 && action == GLFW_PRESS) debug_thing = CUDA_TEST_RAYTRACE;
 	}
 
         //these are required because the only other alternative would be global variables.
@@ -369,62 +371,100 @@ int main()
                         debug_thing = DEBUG_NONE;
                 }
                 
-                // RAYTRACING TIME !  ! !
-                if (debug_thing == SPAWN_LIGHTS_FOR_CAMERA_RAYS) {
+                // CPU raytrace
+                if (debug_thing == CPU_TEST_RAYTRACE && editors[0].mdl_cam_proj.vao != 0) {
                         int width, height;
-	                glfwGetWindowSize(wnd, &width, &height);
-                        //array of rays
-                        vec3s *cam_dirs = ht_generate_camera_directions(&camera, width, height);
-
-
-                        for (int i = 0; i < width; i++) {
-                                for (int j = 0; j < height; j++) {
-                                        if (((j + 10) % 20 == 0 && (i + 10) % 20 == 0)) {
-                                                light_source_add(&light_sources_data, (LightSource){DIRECTIONAL, glms_vec3_add(camera.pos, glms_vec3_scale(cam_dirs[i*width + j],5)), 0.05});
-                                        }
+                        glfwGetWindowSize(wnd, &width, &height);
+                        vec3s* cam_dirs = ht_generate_camera_directions(&camera, width, height);
+    
+                        double start_time = glfwGetTime(); // Start CPU timer
+                        int lights_added_cpu = 0;
+    
+                        for (int i = 0; i < height; i += 50) {
+                            for (int j = 0; j < width; j += 50) {
+                                float t_ray;
+                                vec3s point;
+                                int hit = ht_intersect_heightmap_ray(editors[0].hmap, editors[0].hmap_w, editors[0].hmap_l,
+                                    camera.pos, cam_dirs[i * width + j], 0.1f, 500.0f, &t_ray, &point);
+                                if (hit) {
+                                    vec3s world_point = glms_vec3_add(camera.pos, glms_vec3_scale(cam_dirs[i * width + j], t_ray));
+                                    light_source_add(&light_sources_data, (LightSource) { POINT, world_point, 1.0f });
+                                    printf("CPU Hit at t=%.6f: %.6f %.6f %.6f\n", t_ray, V3_X(world_point), V3_Y(world_point), V3_Z(world_point));
+                                    lights_added_cpu++; // Increment CPU lights count
                                 }
+                            }
                         }
+                        double end_time = glfwGetTime(); // Stop CPU timer
+                        printf("CPU Raytracing finished: %d lights added. Time taken: %.6f seconds\n", lights_added_cpu, end_time - start_time);
+    
+    
                         free(cam_dirs);
-
                         debug_thing = DEBUG_NONE;
                 }
 
-                if (debug_thing == SPAWN_LIGHTS_FOR_INTERSECTIONS) {
+#ifdef __CUDACC__
+                // --- CUDA RAYTRACING ---
+                if (debug_thing == CUDA_TEST_RAYTRACE && editors[0].mdl_cam_proj.vao != 0) {
                         int width, height;
-	                glfwGetWindowSize(wnd, &width, &height);
-                        //array of rays
-                        vec3s *cam_dirs = ht_generate_camera_directions(&camera, width, height);
-
-
-                        for (int i = 0; i < height; i++) {
-                                for (int j = 0; j < width; j++) {
-                                        if ((j+25) % 50 != 0 || (i+25) % 50 != 0) {
-                                                continue;
+                        glfwGetWindowSize(wnd, &width, &height);
+    
+                        float* t_results_cuda = NULL;
+                        vec3s* points_results_cuda = NULL;
+    
+                        // Start CUDA timer (measures host-side call, including transfer and kernel launch)
+                        double start_time = glfwGetTime();
+    
+                        ht_trace_all_cuda(
+                            editors[0].hmap, editors[0].hmap_w, editors[0].hmap_l,
+                            &camera, width, height, 0.1f, 500.0f,
+                            &t_results_cuda, &points_results_cuda
+                        );
+    
+                        double end_time = glfwGetTime(); // Stop CUDA timer
+    
+                        if (t_results_cuda && points_results_cuda) {
+                            int lights_added_cuda = 0; // Counter for lights spawned on host
+                            // Step safely over pixels (same step size as CPU version for comparison)
+                            int step = 50;
+                            if (width < step) step = 1;
+                            if (height < step) step = 1;
+    
+                            for (int i = 0; i < height; i += step) {
+                                for (int j = 0; j < width; j += step) {
+                                    int idx = i * width + j;
+    
+                                    // Check for a valid hit (t >= 0.0f is considered a hit from the caller's perspective)
+                                    if (t_results_cuda[idx] >= 0.0f) {
+                                        vec3s hit_point = points_results_cuda[idx];
+                                        float hit_time = t_results_cuda[idx];
+    
+                                        // Print every sampled hit point (like the CPU version)
+                                        fprintf(stdout, "CUDA Hit at t=%.6f: %.6f %.6f %.6f\n",
+                                            hit_time, V3_X(hit_point), V3_Y(hit_point), V3_Z(hit_point));
+    
+                                        // Spawn point light if there is space
+                                        if (light_sources_data.num_lights < MAX_LIGHT_SOURCES) {
+                                            light_source_add(&light_sources_data, (LightSource) { POINT, hit_point, 1.0f });
+                                            lights_added_cuda++; // Increment CUDA lights count
                                         }
-
-                                        //how far the ray goes
-                                        float t_ray;
-                                        vec3s point;
-                                        int shot = ht_intersect_heightmap_ray(
-                                            editors[0].hmap, editors[0].hmap_w, editors[0].hmap_l, camera.pos, cam_dirs[i*width + j],
-                                            0.1, 500, &t_ray, &point);
-                                        
-                                                
-                                        if (shot != 0) {
-                                                printf("SHOT\n");
-                                                vec3s point2 = camera.pos;
-                                                vec3s tmp = glms_vec3_scale(cam_dirs[i * height + j], t_ray);
-                                                point2 = glms_vec3_add(camera.pos, tmp);
-                                                light_source_add(&light_sources_data, (LightSource){POINT, point2, 1});
-                                        }
+                                    }
                                 }
+                            }
+    
+                            // Summary print for CUDA
+                            printf("CUDA Raytracing finished: %d lights added. Time taken: %.6f seconds\n", lights_added_cuda, end_time - start_time);
+    
+    
+                            free(t_results_cuda);
+                            free(points_results_cuda);
                         }
-
-                        free(cam_dirs);
-
+                        else {
+                            fprintf(stderr, "CUDA Raytracing failed: no results returned\n");
+                        }
+    
                         debug_thing = DEBUG_NONE;
                 }
-
+#endif
 
                 //Render the editors
                 glEnable(GL_DEPTH_TEST);
