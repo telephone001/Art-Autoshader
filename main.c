@@ -218,9 +218,8 @@ void framebuffer_size_callback(GLFWwindow *const window, int width, int height)
 
 int main() 
 {
-        if (!glfwInit()) {
-                return -1; // Initialization failed
-        }
+        if (!glfwInit()) return -1;
+        
 
         GLFWwindow* wnd = glfw_setup(3, 3, SCR_LENGTH, SCR_HEIGHT, "art autoshader");
 	    if (!wnd)
@@ -263,7 +262,7 @@ int main()
 
         MenuOptions gui_menu;
         int err = nuklear_menu_init(&gui_menu, wnd, "fonts/american-typewriter.ttf", 22); 
-        ERR_ASSERT_RET((err >= 0), -1, "nuklear window could not be created");
+        ERR_ASSERT_RET((err >= 0), -2, "nuklear window could not be created");
 
         // this is required AFTER nuklear_menu_init because it uses the callbacks
         glfwSetKeyCallback(wnd, key_callback_menu_switching);
@@ -284,7 +283,6 @@ int main()
         int cnt = 0;
 
         glfwSetInputMode(wnd, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-
         GL_PRINT_ERR();
         
         while (!glfwWindowShouldClose(wnd)) {
@@ -439,21 +437,12 @@ int main()
                 }
                 
 ///////////////////////////////// TESTS ON FRAMEBUFFER ////////////////////////////////////
-                GLint window_w, window_h;
-                glfwGetWindowSize(wnd, &window_w, &window_h); // Get main window size for restore
-                glBindFramebuffer(GL_FRAMEBUFFER, gui_menu.ecam_data.fbo);
 
-                
-                // *** CRITICAL FIX: Set Viewport to Framebuffer/Texture Size ***
-                // Assuming gui_menu.ecam_data holds the dimensions of the framebuffer texture.
-                // Replace these placeholders with the correct fields if necessary.
-                glViewport(0, 0, gui_menu.ecam_data.width, gui_menu.ecam_data.height); 
- 
-                // Use the standard clear color (dark blue) to confirm if the clear worked.
-                glClearColor(0.1, 0.2, 0.3, 1.0);
+                glBindFramebuffer(GL_FRAMEBUFFER, gui_menu.ecam_data.fbo);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-                Camera editor_cam = camera;
+                
+                Camera editor_cam = editors[gui_menu.which_editor_selected].cam;
                 float ofx, ofy;
                 ofx = gui_menu.ecam_data.pos_offset.x;
                 ofy = gui_menu.ecam_data.pos_offset.y;
@@ -479,9 +468,6 @@ int main()
                 }
 
                 glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-                // *** CRITICAL FIX: Restore Viewport to Main Window Size ***
-                glViewport(0, 0, window_w, window_h);
 
 ///////////////////////////////// TESTS ON FRAMEBUFFER ////////////////////////////////////
 

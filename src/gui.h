@@ -43,6 +43,7 @@ typedef enum MenuState {
         MENU_STATE_MAIN,
         MENU_STATE_IMG_SELECT,
         MENU_STATE_HEIGHTMAP_EDIT,
+        MENU_STATE_EDITOR_SELECT,
         NUM_STATES
 } MenuState;
 
@@ -77,7 +78,7 @@ typedef struct MenuOptions {
         struct nk_image img_nk; //nk handler of the image
         int img_copied; //boolean for if the image is being used by cam_proj_mdl (borrowed)
 
-        vec2s hmap_selected_point;
+        int which_editor_selected; //indexes which editor we select
 
         EditorCamData ecam_data;  // struct containing all the parts of the editor camera's data required for rendering
 } MenuOptions;

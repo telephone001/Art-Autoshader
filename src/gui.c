@@ -104,7 +104,7 @@ int nuklear_menu_init(
         	.img_tex = 0,	
         	.img_nk = {0},
 		.img_copied = 0,
-
+		.which_editor_selected = 0,
 		
 	};
 	
@@ -272,6 +272,11 @@ static void state_main_render(MenuOptions *const gui_menu)
 	if (nk_button_label(gui_menu->ctx, "edit heightmap")) {
 		gui_menu->state = MENU_STATE_HEIGHTMAP_EDIT;
 	}
+
+	nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
+	if (nk_button_label(gui_menu->ctx, "select editor")) {
+		gui_menu->state = MENU_STATE_EDITOR_SELECT;
+	}
 }
 
 
@@ -374,6 +379,43 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 }
 
 
+static void state_select_editor(MenuOptions *const gui_menu)
+{
+	nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
+	if (nk_button_label(gui_menu->ctx, "back to main menu")) {
+		gui_menu->state = MENU_STATE_MAIN;
+	}
+
+	nk_layout_row_dynamic(gui_menu->ctx, 30, 2);
+	if (nk_button_label(gui_menu->ctx, "<")) {
+		if (gui_menu->which_editor_selected > 0) {
+			gui_menu->which_editor_selected--;
+		}
+	}
+	if (nk_button_label(gui_menu->ctx, ">")) {
+		gui_menu->which_editor_selected++;
+	}
+
+	nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
+	nk_labelf(gui_menu->ctx, NK_TEXT_LEFT, "editor_selected: %d", gui_menu->which_editor_selected);
+
+	nk_style_push_color(gui_menu->ctx, &gui_menu->ctx->style.text.color, nk_rgb(255, 0, 0));
+	nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
+	if (nk_button_label(gui_menu->ctx, "delete")) {
+		gui_menu->which_editor_selected++;
+	}
+	nk_style_pop_color(gui_menu->ctx);
+
+	menu_fit_img(
+		gui_menu->ctx, 
+		gui_menu->ecam_data.tex_nk, 
+		(float)gui_menu->ecam_data.width / (float)gui_menu->ecam_data.height, 
+		140
+	);
+
+
+}
+
 /// @brief This is a drawcall for the gui menu
 /// @param wnd window to render the menu onto
 /// @param delta_time the delta time
@@ -407,6 +449,10 @@ void nuklear_menu_render(GLFWwindow *wnd, float delta_time, MenuOptions *const g
 
 		case MENU_STATE_HEIGHTMAP_EDIT:
 			state_heightmap_edit_render(gui_menu, delta_time, wnd);
+			break;
+
+		case MENU_STATE_EDITOR_SELECT:
+			state_select_editor(gui_menu);
 			break;
 
 		default:
