@@ -282,7 +282,7 @@ int main()
 
         // THIS IS FOR DEBUGGING
         Editor editors[MAX_EDITORS] = {0};
-        int cnt = 0;
+        int edit_idx = 0; // if we were to add another editor, at what idx will it be added in editors
 
         glfwSetInputMode(wnd, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         GL_PRINT_ERR();
@@ -303,16 +303,17 @@ int main()
 
                 // If debug thing is 1, we make an editor
                 if (debug_thing == SPAWN_EDITOR) {
-
                         // WARNING:  EDITOR DOESNT DO REFERENCE COUNTING FOR ALLOCATED TEXTURES
                         //Required before editor_free if gui_menu is using the texture.
-                        if (editors[cnt].mdl_cam_plane.textures != NULL &&
-                            gui_menu.img_tex == editors[cnt].mdl_cam_plane.textures[0]) {
-                                editors[cnt].mdl_cam_plane.textures[0] = 0;
+                        if (editors[edit_idx].mdl_cam_plane.textures != NULL &&
+                            gui_menu.img_tex == editors[edit_idx].mdl_cam_plane.textures[0]) {
+                                editors[edit_idx].mdl_cam_plane.textures[0] = 0;
+                        } else {
+
                         }
-                        editor_free(&(editors[cnt]));
+                        editor_free(&(editors[edit_idx]));
                         int err = editor_init(
-                                &(editors[cnt]), 
+                                &(editors[edit_idx]), 
                                 wnd, 
                                 &gui_menu, 
                                 shader_cam_proj, 
@@ -322,28 +323,30 @@ int main()
                                 100  // PLACHOLDER
                         );
                         
-                        hmap_edit_sinc(&(editors[cnt]));
+                        hmap_edit_sinc(&(editors[edit_idx]));
 
 
                         if (err < 0) {
                                 //Required before editor_free if gui_menu is using the texture.
-                                if (editors[cnt].mdl_cam_plane.textures != NULL &&
-                                    gui_menu.img_tex == editors[cnt].mdl_cam_plane.textures[0]) {
-                                        editors[cnt].mdl_cam_plane.textures[0] = 0;
+                                if (editors[edit_idx].mdl_cam_plane.textures != NULL &&
+                                    gui_menu.img_tex == editors[edit_idx].mdl_cam_plane.textures[0]) {
+                                        editors[edit_idx].mdl_cam_plane.textures[0] = 0;
                                 }
-                                editor_free(&(editors[cnt]));
+                                editor_free(&(editors[edit_idx]));
+                        } else {
+                                edit_idx++;
                         }
-                        debug_thing = DEBUG_NONE;
-                        cnt++;
 
-                        if (cnt >= MAX_EDITORS) {
-                                cnt = 0;
+                        if (edit_idx >= MAX_EDITORS) {
+                                edit_idx = 0;
                         }
+
+                        debug_thing = DEBUG_NONE; 
                 }
 
                 // delete editor AND light sources
                 if (debug_thing == DELETE_EVERYTHING) {
-                        cnt = 0;
+                        edit_idx = 0;
                         for (int i = 0; i < MAX_EDITORS; i++) {
                                 //Required before editor_free if gui_menu is using the texture.
                                 if (editors[i].mdl_cam_plane.textures != NULL && 
@@ -515,7 +518,7 @@ int main()
                 // REMEMBER THAT THIS CAN RETURN AN ERROR
                 light_sources_render(&light_sources_data, flycam_projection, flycam_view);
 
-
+///////////////////////////////// GUI_STUFF ////////////////////////////////////   
 		if (in_menu) {
                         nuklear_menu_render(wnd, delta_time, &gui_menu);
         		glfwSetCursorPosCallback(wnd, NULL);
@@ -523,6 +526,37 @@ int main()
                 	handle_wasd_move(wnd, delta_time);
                 	glfwSetCursorPosCallback(wnd, mouse_callback);
 		}
+
+                switch (gui_menu.editor_action) {
+                        case EDITOR_ACTION_GOTO:
+                                camera = editors[gui_menu.which_editor_selected].cam;
+                                gui_menu.editor_action = EDITOR_ACTION_IDLE;
+                                break;
+                                
+                        case EDITOR_ACTION_DELETE:
+                                //only delete an editor we selected a valid editor
+                                if (edit_idx != 0 && gui_menu.which_editor_selected < edit_idx) {
+                                        editor_free(&editors[gui_menu.which_editor_selected]);
+
+                                        // shift every editor down if we delete one in the middle of the array
+                                        for (int i = gui_menu.which_editor_selected; i < edit_idx; i++) {
+                                                editors[i] = editors[i + 1];
+                                        }
+
+                                        edit_idx--;
+
+                                        editor_free(&editors[edit_idx]);
+                                }
+
+                                gui_menu.editor_action = EDITOR_ACTION_IDLE;
+                                break;
+                        case EDITOR_ACTION_MOVE:
+                                //TODO
+                                break;
+                        default:
+                        break;
+                }
+                
                 
                 glfwSwapBuffers(wnd);
                 glfwPollEvents();

@@ -48,6 +48,14 @@ typedef enum MenuState {
 } MenuState;
 
 
+typedef enum EditorSelectAction {
+        EDITOR_ACTION_IDLE, //do nothing
+        EDITOR_ACTION_DELETE, //Deletes the editor
+        EDITOR_ACTION_GOTO, // teleports the flycam to the editor selected
+        EDITOR_ACTION_MOVE, //lets you move the editor
+} EditorSelectAction;
+
+
 typedef struct EditorCamData {
         GLuint fbo;        // handler of the framebuffer 
         GLuint rbo;        // a part of the fbo
@@ -76,9 +84,13 @@ typedef struct MenuOptions {
         float img_aspect_ratio; //the aspect ratio of the image (width / height)
         GLuint img_tex;   //glfw texture id of the image we want to use
         struct nk_image img_nk; //nk handler of the image
-        int img_copied; //boolean for if the image is being used by cam_proj_mdl (borrowed)
+        int img_copied; //boolean for if the current image is being used by an editor (borrowed)
 
         int which_editor_selected; //indexes which editor we select
+
+        //when we have a selected editor, what do we do with it?
+        // this will have to be read in from main and you will have to do something based on what the editor action is in main
+        EditorSelectAction editor_action;
 
         EditorCamData ecam_data;  // struct containing all the parts of the editor camera's data required for rendering
 } MenuOptions;

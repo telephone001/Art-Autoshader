@@ -88,6 +88,8 @@ int nuklear_menu_init(
 	// These are set right now
 		.state = MENU_STATE_MAIN,   
 		.font_size = font_size,
+		.which_editor_selected = 0,
+		.editor_action = EDITOR_ACTION_IDLE,
 
 	// These are created in this function below
 		.ctx = NULL, 
@@ -104,7 +106,6 @@ int nuklear_menu_init(
         	.img_tex = 0,	
         	.img_nk = {0},
 		.img_copied = 0,
-		.which_editor_selected = 0,
 		
 	};
 	
@@ -381,6 +382,9 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 
 static void state_select_editor(MenuOptions *const gui_menu)
 {
+	gui_menu->ecam_data.in_perspective = 1;
+
+
 	nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
 	if (nk_button_label(gui_menu->ctx, "back to main menu")) {
 		gui_menu->state = MENU_STATE_MAIN;
@@ -399,12 +403,14 @@ static void state_select_editor(MenuOptions *const gui_menu)
 	nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
 	nk_labelf(gui_menu->ctx, NK_TEXT_LEFT, "editor_selected: %d", gui_menu->which_editor_selected);
 
-	nk_style_push_color(gui_menu->ctx, &gui_menu->ctx->style.text.color, nk_rgb(255, 0, 0));
-	nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
-	if (nk_button_label(gui_menu->ctx, "delete")) {
-		gui_menu->which_editor_selected++;
+	
+	nk_layout_row_dynamic(gui_menu->ctx, 30, 2);
+	if (nk_button_label(gui_menu->ctx, "goto")) {
+		gui_menu->editor_action = EDITOR_ACTION_GOTO;
 	}
-	nk_style_pop_color(gui_menu->ctx);
+	if (nk_button_label(gui_menu->ctx, "delete")) {
+		gui_menu->editor_action = EDITOR_ACTION_DELETE;
+	}
 
 	menu_fit_img(
 		gui_menu->ctx, 
@@ -412,6 +418,7 @@ static void state_select_editor(MenuOptions *const gui_menu)
 		(float)gui_menu->ecam_data.width / (float)gui_menu->ecam_data.height, 
 		140
 	);
+
 
 
 }
