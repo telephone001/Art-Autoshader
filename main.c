@@ -270,13 +270,13 @@ int main()
         glfwSetKeyCallback(wnd, key_callback_menu_switching);
 
 
-        LightSourcesData light_sources_data = {0};
 
         GLuint point_light_tex, directional_light_tex;
         load_2dtexture(&point_light_tex, "textures/point_light.jpg", GL_RGB);
         load_2dtexture(&directional_light_tex, "textures/directional_light.jpg", GL_RGB);
 
-        err = light_sources_rd_init(&(light_sources_data.rd), shader_light_sources, point_light_tex, directional_light_tex);
+        LightSourcesData light_sources_data = {0};
+        err = light_sources_data_init(&light_sources_data, shader_light_sources, point_light_tex, directional_light_tex);
         ERR_ASSERT_RET((err >= 0), -2, "light sources struct could not be created");
 
 

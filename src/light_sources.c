@@ -2,6 +2,33 @@
 
 extern Camera camera;
 
+/// @brief initializes a light source data struct using malloc on the lights array (so we can have as many light sources as we want for debugging)
+/// @param light_sources the light sources data you want to initialize
+/// @param shader the shader that the light sources data uses to render a lightsource
+/// @param point_light_tex the texture of a point light source
+/// @param directional_light_tex the texture of a directional light source
+/// @return negative value on error.
+int light_sources_data_init(LightSourcesData *light_sources, GLuint shader, GLuint point_light_tex, GLuint directional_light_tex)
+{
+        LightSourcesData lsd = {     
+                //set right now           
+                .num_lights = 0,
+                .lights_length = MAX_LIGHT_SOURCES,
+                .lights = malloc(sizeof(LightSource) * MAX_LIGHT_SOURCES),
+
+                // SET BELOW IN THIS FUNCTION
+                .rd = {0},
+        };
+
+        //TODO REMEMBER TO CHECK ERRORS !! 
+        int err = light_sources_rd_init(&lsd.rd, shader, point_light_tex, directional_light_tex);
+        ERR_ASSERT_RET((err >= 0), -2, "light sources renderdata could not be created");
+
+        *light_sources = lsd;
+
+        return 0;
+}
+
 /// @brief renders all the lightsources. It will bind all the textures and then render light source one by one (TODO: would be better with instancing)
 /// @param light_sources the struct containing all light sources
 /// @param projection the projection matrix
@@ -169,6 +196,8 @@ int light_source_add(LightSourcesData *light_sources_data, LightSource light_sou
         if (light_sources_data->num_lights >= MAX_LIGHT_SOURCES) {
                 return -1;
         }
+
+        
 
         // the index to place the new light source
         int idx = -1;

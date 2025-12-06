@@ -8,7 +8,7 @@
 #include "glfw_window.h"
 
 
-#define MAX_LIGHT_SOURCES 200*200
+#define MAX_LIGHT_SOURCES 800*800
 
 typedef enum LightType {
         NONE,           //this is only here to check if a light source entry in the array is valid
@@ -32,13 +32,21 @@ enum LightSourcesVertexAttributes {
 typedef struct LightSourcesData {
         RenderData rd;                         // renderdata for all the lights
         int num_lights;                 // counts how many light sources are currently there
-        LightSource lights[MAX_LIGHT_SOURCES]; // contains all the lights in the program. 
+
+        int lights_length; //the length of the light sources object (not trivial because what if somebody doesn't know where max_light_sources is)
+        LightSource *lights; // contains all the lights in the program. (HAS TO BE MALLOCED)
 } LightSourcesData;
 
 
 
 
-
+/// @brief initializes a light source data struct using malloc on the lights array (so we can have as many light sources as we want for debugging)
+/// @param light_sources the light sources data you want to initialize
+/// @param shader the shader that the light sources data uses to render a lightsource
+/// @param point_light_tex the texture of a point light source
+/// @param directional_light_tex the texture of a directional light source
+/// @return negative value on error.
+int light_sources_data_init(LightSourcesData *light_sources, GLuint shader, GLuint point_light_tex, GLuint directional_light_tex);
 
 /// @brief renders all the lightsources. It will bind all the textures and then render light source one by one (TODO: would be better with instancing)
 /// @param light_sources the struct containing all light sources
