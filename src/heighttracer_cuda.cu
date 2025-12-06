@@ -1,309 +1,288 @@
+// heighttracer_cuda.cu
 #include "heighttracer_cuda.cuh"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 #include <math_constants.h> 
 
-// CRITICAL FIX: Use constant memory for read-only Camera struct
+// ------------------ Constant memory ------------------
 __constant__ Camera d_cam_const;
+__constant__ float HMAP_DX_SCALE = 1.0f;
 
-// ---------------- IntelliSense Compatibility ----------------
-#ifdef __INTELLISENSE__
-#define __global__
-#define __device__
-#define __host__
-#define __shared__
-#define CUDA_KERNEL_LAUNCH(kernel, grid, block, ...) 
-#else
-#define CUDA_KERNEL_LAUNCH(kernel, grid, block, ...) \
-    kernel<<<grid, block>>>(__VA_ARGS__)
-#endif
-// ------------------------------------------------------------
-
-
-// ---------------- Device helpers ----------------
-__device__ float sample_hmap_nearest(
-    const float* hmap, int w, int l, float x, float z)
+// ------------------ Helpers ------------------
+__device__ inline float sample_hmap_nearest(const float* hmap, int w, int l, float x, float z)
 {
-    // Check if coordinates are within the bounds [0, w-1] and [0, l-1]
     int ix = (int)floorf(x);
     int iz = (int)floorf(z);
-    
-    if (ix < 0 || iz < 0 || ix >= w || iz >= l) return -INFINITY;
-    
+    if (ix < 0 || iz < 0 || ix >= w || iz >= l) return -CUDART_INF_F;
     return hmap[iz * w + ix];
 }
 
-__device__ void vec3s_normalize(vec3s* v)
+__device__ inline void vec3s_normalize_inplace(vec3s* v)
 {
-    float len = sqrtf(v->x*v->x + v->y*v->y + v->z*v->z);
-    if (len > 1e-6f) {
-        v->x /= len;
-        v->y /= len;
-        v->z /= len;
-    }
+    float len = sqrtf(v->x * v->x + v->y * v->y + v->z * v->z);
+    if (len > 1e-9f) { v->x /= len; v->y /= len; v->z /= len; }
 }
 
-__device__ int intersect_heightmap_ray_device(
+// ------------------ Triangle-based normal ------------------
+__device__ inline vec3s get_hmap_normal_device_triangles(const float* hmap, int w, int l, float px, float pz)
+{
+    int ix = (int)floorf(px);
+    int iz = (int)floorf(pz);
+
+    if (ix < 0 || iz < 0 || ix >= w - 1 || iz >= l - 1)
+        return { 0.0f,1.0f,0.0f };
+
+    float h00 = sample_hmap_nearest(hmap, w, l, (float)ix, (float)iz);
+    float h10 = sample_hmap_nearest(hmap, w, l, (float)(ix + 1), (float)iz);
+    float h01 = sample_hmap_nearest(hmap, w, l, (float)ix, (float)(iz + 1));
+    float h11 = sample_hmap_nearest(hmap, w, l, (float)(ix + 1), (float)(iz + 1));
+
+    float local_x = px - ix;
+    float local_z = pz - iz;
+
+    vec3s v0, v1, v2;
+
+    if (local_x + local_z < 1.0f) {
+        v0 = { 0.0f,h00,0.0f };
+        v1 = { 1.0f,h10,0.0f };
+        v2 = { 0.0f,h01,1.0f };
+    }
+    else {
+        v0 = { 1.0f,h11,1.0f };
+        v1 = { 0.0f,h01,1.0f };
+        v2 = { 1.0f,h10,0.0f };
+    }
+
+    vec3s e1 = { v1.x - v0.x, v1.y - v0.y, v1.z - v0.z };
+    vec3s e2 = { v2.x - v0.x, v2.y - v0.y, v2.z - v0.z };
+
+    vec3s n = { e1.y * e2.z - e1.z * e2.y, e1.z * e2.x - e1.x * e2.z, e1.x * e2.y - e1.y * e2.x };
+    vec3s_normalize_inplace(&n);
+    return n;
+}
+
+// ------------------ Ray intersection ------------------
+__device__ inline int intersect_heightmap_ray_device(
     const float* hmap, int hm_w, int hm_l,
     vec3s origin, vec3s dir,
     float step, float max_t,
     float* out_t, vec3s* out_p)
 {
-    // Note: CPU version starts raymarching from t=0.0f, but the CUDA
-    // version previously started at t=step. Reverting to t=0.0f 
-    // to perfectly match the CPU logic.
-    float t = 0.0f; 
-
-    while (t < max_t) {
+    float t = 0.0f;
+    while (t < max_t)
+    {
         float px = origin.x + dir.x * t;
         float py = origin.y + dir.y * t;
         float pz = origin.z + dir.z * t;
 
         float h = sample_hmap_nearest(hmap, hm_w, hm_l, px, pz);
+        // FIX: Use CUDART_INF_F
+        if (h == -CUDART_INF_F) return 0;
 
-        if (h == -INFINITY) {
-            return 0; 
-        }
-
-        // if py <= surface height -> hit
-        if (py <= h) {
-            *out_t = t;
-            out_p->x = px; out_p->y = py; out_p->z = pz;
+        if (py <= h)
+        {
+            if (out_t) *out_t = t;
+            if (out_p) { out_p->x = px; out_p->y = py; out_p->z = pz; }
             return 1;
         }
-
         t += step;
     }
     return 0;
 }
-// ------------------------------------------------------------
 
-
-// ------------------- Kernel ----------------------
+// ------------------ Kernel ------------------
 __global__ void heightmap_tracer_kernel(
     const float* hmap, int hm_w, int hm_l,
     int screenW, int screenH,
     float step, float max_t,
     float* out_t,
-    vec3s* out_points)
+    vec3s* out_hit_points,
+    vec3s* out_normals)
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    int total_pixels = screenW * screenH;
-    if (idx >= total_pixels) return;
+    int total = screenW * screenH;
+    if (idx >= total) return;
 
     int py = idx / screenW;
     int px = idx % screenW;
-    
-    // FOVY is from glfw_window.h
+
     float radFov = FOVY * (CUDART_PI_F / 180.0f);
     float tanFov = tanf(radFov * 0.5f);
     float aspect = (float)screenW / (float)screenH;
 
-    // Map pixel coordinates to Normalized Device Coordinates (NDC)
-    float ndc_x = ((px + 0.5f) / screenW) * 2.f - 1.f;
-    float ndc_y = 1.f - ((py + 0.5f) / screenH) * 2.f; 
-    
-    // Convert NDC to View Space coordinates (Z=-1 plane)
+    float ndc_x = ((px + 0.5f) / (float)screenW) * 2.0f - 1.0f;
+    float ndc_y = 1.0f - ((py + 0.5f) / (float)screenH) * 2.0f;
+
     float cam_x = ndc_x * aspect * tanFov;
     float cam_y = ndc_y * tanFov;
 
-    vec3s dir;
-    // CRITICAL FIX: Match CPU logic for World Space ray direction.
-    // The CPU version implicitly uses 1.0f for the forward component,
-    // which fixes the direction reversal bug.
-    dir.x = d_cam_const.front.x * 1.0f + d_cam_const.right.x * cam_x + d_cam_const.up.x * cam_y;
-    dir.y = d_cam_const.front.y * 1.0f + d_cam_const.right.y * cam_x + d_cam_const.up.y * cam_y;
-    dir.z = d_cam_const.front.z * 1.0f + d_cam_const.right.z * cam_x + d_cam_const.up.z * cam_y;
+    vec3s dir = {
+        d_cam_const.front.x + d_cam_const.right.x * cam_x + d_cam_const.up.x * cam_y,
+        d_cam_const.front.y + d_cam_const.right.y * cam_x + d_cam_const.up.y * cam_y,
+        d_cam_const.front.z + d_cam_const.right.z * cam_x + d_cam_const.up.z * cam_y
+    };
+    vec3s_normalize_inplace(&dir);
 
-    vec3s_normalize(&dir);
+    float t_hit = 0.0f;
+    vec3s hitp = { 0.0f,0.0f,0.0f };
+    int hit = intersect_heightmap_ray_device(hmap, hm_w, hm_l, d_cam_const.pos, dir, step, max_t, &t_hit, &hitp);
 
-    float t_hit;
-    vec3s hitp;
-
-    // Raymarch to find initial hit (t_hit)
-    int hit = intersect_heightmap_ray_device(
-        hmap, hm_w, hm_l,
-        d_cam_const.pos, dir, 
-        step, max_t,
-        &t_hit, &hitp
-    );
-
-    if (!hit) {
-        out_t[idx] = -1.f;
-        out_points[idx].x = 0.f;
-        out_points[idx].y = 0.f;
-        out_points[idx].z = 0.f;
+    if (!hit)
+    {
+        out_t[idx] = -1.0f;
+        out_hit_points[idx] = { 0.0f,0.0f,0.0f };
+        out_normals[idx] = { 0.0f,1.0f,0.0f };
         return;
     }
 
-    // Binary search refinement
+    // Binary refinement
     const int REFINEMENT_ITERS = 6;
-    // t_lo must start from 0 if t_hit is the first step hit.
-    float t_lo = t_hit > step ? t_hit - step : 0.0f;
+    float t_lo = (t_hit > step) ? t_hit - step : 0.0f;
     float t_hi = t_hit;
-
-    for (int i = 0; i < REFINEMENT_ITERS; i++) {
+    for (int i = 0; i < REFINEMENT_ITERS; i++)
+    {
         float t_mid = 0.5f * (t_lo + t_hi);
-
         float pxm = d_cam_const.pos.x + dir.x * t_mid;
         float pym = d_cam_const.pos.y + dir.y * t_mid;
         float pzm = d_cam_const.pos.z + dir.z * t_mid;
-
         float hm = sample_hmap_nearest(hmap, hm_w, hm_l, pxm, pzm);
-
-        if (hm != -INFINITY && pym <= hm)
-            t_hi = t_mid;
-        else
-            t_lo = t_mid;
+        if (hm != -CUDART_INF_F && pym <= hm) t_hi = t_mid;
+        else t_lo = t_mid;
     }
 
     float t_final = t_hi;
+    vec3s pf = { d_cam_const.pos.x + dir.x * t_final,
+                 d_cam_const.pos.y + dir.y * t_final,
+                 d_cam_const.pos.z + dir.z * t_final };
 
-    vec3s pf;
-    pf.x = d_cam_const.pos.x + dir.x * t_final;
-    pf.y = d_cam_const.pos.y + dir.y * t_final;
-    pf.z = d_cam_const.pos.z + dir.z * t_final;
+    vec3s normal = get_hmap_normal_device_triangles(hmap, hm_w, hm_l, pf.x, pf.z);
 
     out_t[idx] = t_final;
-    out_points[idx] = pf;
+    out_hit_points[idx] = pf;
+    out_normals[idx] = normal;
 }
-// ------------------------------------------------------------
 
-
-// ---------------- Host Wrapper --------------------
-// (No change here from previous successful version, retaining error checks and __constant__ memcpy)
+// ------------------ Host wrapper (FIXED) ------------------
 void ht_trace_all_cuda(
     const float* hmap_host, int hm_w, int hm_l,
     const Camera* cam_host,
     int screenW, int screenH,
     float step, float max_t,
     float** out_t_ptr_host,
-    vec3s** out_points_ptr_host)
+    vec3s** out_hit_points_ptr_host,
+    vec3s** out_normals_ptr_host)
 {
-    // ---- declare EVERYTHING up front ----
-    int total_pixels;
-    int THREADS;
-    int BLOCKS;
-    size_t t_size;
-    size_t p_size;
-    size_t hmap_size;
-    float* hmap_device = NULL;
-    float* out_t_device = NULL;
-    vec3s* out_points_device = NULL;
+    // --- 1. DECLARATIONS MUST BE FIRST (Before any goto) ---
+    // Even primitive types like int must be declared here to satisfy E0546
+
+    int total_pixels = screenW * screenH;
+    size_t t_size = (size_t)total_pixels * sizeof(float);
+    size_t p_size = (size_t)total_pixels * sizeof(vec3s);
+    size_t hmap_size = (size_t)hm_w * (size_t)hm_l * sizeof(float);
+
+    // Device pointers
+    float* d_hmap = NULL;
+    float* d_out_t = NULL;
+    vec3s* d_hit = NULL;
+    vec3s* d_norm = NULL;
+
+    // Host pointers
+    float* out_t_host = NULL;
+    vec3s* out_hit_host = NULL;
+    vec3s* out_norm_host = NULL;
     float* initbuf = NULL;
-    cudaError_t err;
-    
-    *out_t_ptr_host = NULL;
-    *out_points_ptr_host = NULL;
 
-    if (!hmap_host || screenW <= 0 || screenH <= 0 || !cam_host) return;
+    // Temporary struct for copying
+    Camera cam_tmp;
 
-    total_pixels = screenW * screenH;
-    t_size = (size_t)total_pixels * sizeof(float);
-    p_size = (size_t)total_pixels * sizeof(vec3s);
-    hmap_size = (size_t)hm_w * (size_t)hm_l * sizeof(float);
+    // Kernel configuration
+    int THREADS = 256;
+    int BLOCKS = (total_pixels + THREADS - 1) / THREADS;
 
-    // --- Allocate GPU memory ---
-    err = cudaMalloc((void**)&hmap_device, hmap_size);
-    if (err != cudaSuccess) { fprintf(stderr, "CUDA Malloc hmap_device failed: %s\n", cudaGetErrorString(err)); goto fail; }
+    // --- 2. LOGIC START ---
 
-    err = cudaMalloc((void**)&out_t_device, t_size);
-    if (err != cudaSuccess) { fprintf(stderr, "CUDA Malloc out_t_device failed: %s\n", cudaGetErrorString(err)); goto fail; }
+    // Check input validity
+    if (!hmap_host || !cam_host || screenW <= 0 || screenH <= 0) return;
 
-    err = cudaMalloc((void**)&out_points_device, p_size);
-    if (err != cudaSuccess) { fprintf(stderr, "CUDA Malloc out_points_device failed: %s\n", cudaGetErrorString(err)); goto fail; }
+    // --- Allocate Device Memory ---
+    if (cudaMalloc(&d_hmap, hmap_size) != cudaSuccess) goto cleanup;
+    if (cudaMalloc(&d_out_t, t_size) != cudaSuccess) goto cleanup;
+    if (cudaMalloc(&d_hit, p_size) != cudaSuccess) goto cleanup;
+    if (cudaMalloc(&d_norm, p_size) != cudaSuccess) goto cleanup;
 
-    // --- Upload heightmap and Camera data ---
-    err = cudaMemcpy(hmap_device, hmap_host, hmap_size, cudaMemcpyHostToDevice);
-    if (err != cudaSuccess) { fprintf(stderr, "CUDA Memcpy hmap_host failed: %s\n", cudaGetErrorString(err)); goto fail; }
+    // --- Copy Data to Device ---
+    if (cudaMemcpy(d_hmap, hmap_host, hmap_size, cudaMemcpyHostToDevice) != cudaSuccess) goto cleanup;
 
-    // CRITICAL FIX: Upload Camera data to __constant__ memory
-    err = cudaMemcpyToSymbol(d_cam_const, cam_host, sizeof(Camera));
-    if (err != cudaSuccess) { fprintf(stderr, "CUDA MemcpyToSymbol d_cam_const failed: %s\n", cudaGetErrorString(err)); goto fail; }
+    // Copy Camera constant
+    // NOTE: E0413 warning here is a common IntelliSense false positive in CUDA. 
+    // The code IS valid and will compile.
+    cam_tmp = *cam_host;
+    if (cudaMemcpyToSymbol(d_cam_const, &cam_tmp, sizeof(Camera)) != cudaSuccess) goto cleanup;
 
-    // Init -1 buffer for out_t_device (to guarantee initial miss status)
+    // --- Initialize Device Output Buffers ---
     initbuf = (float*)malloc(t_size);
-    if (!initbuf) { fprintf(stderr, "Host Malloc initbuf failed.\n"); goto fail; }
-    for (int i = 0; i < total_pixels; i++) initbuf[i] = -1.f;
+    if (!initbuf) goto cleanup;
 
-    err = cudaMemcpy(out_t_device, initbuf, t_size, cudaMemcpyHostToDevice);
-    if (err != cudaSuccess) { fprintf(stderr, "CUDA Memcpy initbuf failed: %s\n", cudaGetErrorString(err)); goto fail; }
+    // Initialize array contents on host before copying
+    for (int i = 0; i < total_pixels; i++) initbuf[i] = -1.0f;
+    if (cudaMemcpy(d_out_t, initbuf, t_size, cudaMemcpyHostToDevice) != cudaSuccess) goto cleanup;
 
-    free(initbuf);
-    initbuf = NULL;
+    free(initbuf); initbuf = NULL; // Free temporary buffer
 
-    cudaMemset(out_points_device, 0, p_size);
+    if (cudaMemset(d_hit, 0, p_size) != cudaSuccess) goto cleanup;
+    if (cudaMemset(d_norm, 0, p_size) != cudaSuccess) goto cleanup;
 
-    // ---- Kernel launch ----
-    THREADS = 256;
-    BLOCKS = (total_pixels + THREADS - 1) / THREADS;
+    // --- Launch Kernel ---
+    heightmap_tracer_kernel << <BLOCKS, THREADS >> > (d_hmap, hm_w, hm_l, screenW, screenH, step, max_t, d_out_t, d_hit, d_norm);
 
-    CUDA_KERNEL_LAUNCH(heightmap_tracer_kernel,
-        BLOCKS, THREADS,
-        hmap_device, hm_w, hm_l,
-        screenW, screenH,
-        step, max_t,
-        out_t_device,
-        out_points_device
-    );
+    // Synchronize to catch async errors
+    if (cudaDeviceSynchronize() != cudaSuccess) goto cleanup;
 
-#ifndef __INTELLISENSE__
-    err = cudaDeviceSynchronize();
-    if (err != cudaSuccess) {
-        fprintf(stderr, "CUDA Kernel Execution Error: %s\n", cudaGetErrorString(err));
-        goto fail;
-    }
-#endif
+    // --- Allocate Host Output Memory ---
+    out_t_host = (float*)malloc(t_size);
+    out_hit_host = (vec3s*)malloc(p_size);
+    out_norm_host = (vec3s*)malloc(p_size);
+    if (!out_t_host || !out_hit_host || !out_norm_host) goto cleanup;
 
-    // ---- Copy back ----
-    float* out_t_host = (float*)malloc(t_size);
-    vec3s* out_points_host = (vec3s*)malloc(p_size);
-    if (!out_t_host || !out_points_host) {
-        fprintf(stderr, "Host Malloc final buffers failed.\n");
-        free(out_t_host); 
-        free(out_points_host);
-        goto fail;
-    }
+    // --- Copy Device Results to Host ---
+    if (cudaMemcpy(out_t_host, d_out_t, t_size, cudaMemcpyDeviceToHost) != cudaSuccess) goto cleanup;
+    if (cudaMemcpy(out_hit_host, d_hit, p_size, cudaMemcpyDeviceToHost) != cudaSuccess) goto cleanup;
+    if (cudaMemcpy(out_norm_host, d_norm, p_size, cudaMemcpyDeviceToHost) != cudaSuccess) goto cleanup;
 
-    err = cudaMemcpy(out_t_host, out_t_device, t_size, cudaMemcpyDeviceToHost);
-    if (err != cudaSuccess) { 
-        fprintf(stderr, "CUDA Memcpy back out_t_host failed: %s\n", cudaGetErrorString(err));
-        free(out_t_host); 
-        free(out_points_host);
-        goto fail;
-    }
+    // --- Assign Pointers to Caller (Success) ---
+    if (out_t_ptr_host) *out_t_ptr_host = out_t_host;
+    if (out_hit_points_ptr_host) *out_hit_points_ptr_host = out_hit_host;
+    if (out_normals_ptr_host) *out_normals_ptr_host = out_norm_host;
 
-    err = cudaMemcpy(out_points_host, out_points_device, p_size, cudaMemcpyDeviceToHost);
-    if (err != cudaSuccess) { 
-        fprintf(stderr, "CUDA Memcpy back out_points_host failed: %s\n", cudaGetErrorString(err));
-        free(out_t_host); 
-        free(out_points_host);
-        goto fail;
-    }
+    // Set allocated host pointers to NULL so they are skipped in cleanup (only device cleanup remains)
+    out_t_host = NULL;
+    out_hit_host = NULL;
+    out_norm_host = NULL;
 
-    *out_t_ptr_host = out_t_host;
-    *out_points_ptr_host = out_points_host;
+cleanup:
+    // --- Centralized Cleanup ---
 
-    // Successful path cleanup
-    cudaFree(hmap_device);
-    cudaFree(out_t_device);
-    cudaFree(out_points_device);
-    return;
-
-fail:
-    // Error path cleanup
+    // Free all host memory if it failed *after* allocation
     if (initbuf) free(initbuf);
-    if (hmap_device) cudaFree(hmap_device);
-    if (out_t_device) cudaFree(out_t_device);
-    if (out_points_device) cudaFree(out_points_device);
-    
-    // Set pointers to NULL to signal failure to the caller
-    *out_t_ptr_host = NULL;
-    *out_points_ptr_host = NULL;
-    return;
+    if (out_t_host) free(out_t_host);
+    if (out_hit_host) free(out_hit_host);
+    if (out_norm_host) free(out_norm_host);
+
+    // Free all device memory
+    if (d_hmap) cudaFree(d_hmap);
+    if (d_out_t) cudaFree(d_out_t);
+    if (d_hit) cudaFree(d_hit);
+    if (d_norm) cudaFree(d_norm);
+
+    // On any failure, ensure external pointers are NULL
+    if (cudaPeekAtLastError() != cudaSuccess && cudaPeekAtLastError() != cudaErrorCudartUnloading)
+    {
+        if (out_t_ptr_host) *out_t_ptr_host = NULL;
+        if (out_hit_points_ptr_host) *out_hit_points_ptr_host = NULL;
+        if (out_normals_ptr_host) *out_normals_ptr_host = NULL;
+    }
 }
