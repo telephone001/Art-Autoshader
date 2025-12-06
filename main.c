@@ -303,15 +303,6 @@ int main()
 
                 // If debug thing is 1, we make an editor
                 if (debug_thing == SPAWN_EDITOR) {
-                        // WARNING:  EDITOR DOESNT DO REFERENCE COUNTING FOR ALLOCATED TEXTURES
-                        //Required before editor_free if gui_menu is using the texture.
-                        if (editors[edit_idx].mdl_cam_plane.textures != NULL &&
-                            gui_menu.img_tex == editors[edit_idx].mdl_cam_plane.textures[0]) {
-                                editors[edit_idx].mdl_cam_plane.textures[0] = 0;
-                        } else {
-
-                        }
-                        editor_free(&(editors[edit_idx]));
                         int err = editor_init(
                                 &(editors[edit_idx]), 
                                 wnd, 
@@ -332,7 +323,7 @@ int main()
                                     gui_menu.img_tex == editors[edit_idx].mdl_cam_plane.textures[0]) {
                                         editors[edit_idx].mdl_cam_plane.textures[0] = 0;
                                 }
-                                editor_free(&(editors[edit_idx]));
+                                editor_free_forced(&(editors[edit_idx]), 0);
                         } else {
                                 edit_idx++;
                         }
@@ -353,7 +344,7 @@ int main()
                                     gui_menu.img_tex == editors[i].mdl_cam_plane.textures[0]) {
                                         editors[i].mdl_cam_plane.textures[0] = 0;
                                 }
-                                editor_free(&(editors[i]));
+                                editor_free_forced(&(editors[i]), 1);
                         }
 
                         for (int i = 0; i < MAX_LIGHT_SOURCES; i++) {
@@ -532,11 +523,11 @@ int main()
                                 camera = editors[gui_menu.which_editor_selected].cam;
                                 gui_menu.editor_action = EDITOR_ACTION_IDLE;
                                 break;
-                                
+
                         case EDITOR_ACTION_DELETE:
                                 //only delete an editor we selected a valid editor
                                 if (edit_idx != 0 && gui_menu.which_editor_selected < edit_idx) {
-                                        editor_free(&editors[gui_menu.which_editor_selected]);
+                                        editor_free_safe(editors, gui_menu.which_editor_selected, edit_idx);
 
                                         // shift every editor down if we delete one in the middle of the array
                                         for (int i = gui_menu.which_editor_selected; i < edit_idx; i++) {
@@ -545,7 +536,7 @@ int main()
 
                                         edit_idx--;
 
-                                        editor_free(&editors[edit_idx]);
+                                        editor_free_safe(editors, edit_idx, edit_idx + 1);
                                 }
 
                                 gui_menu.editor_action = EDITOR_ACTION_IDLE;

@@ -631,12 +631,53 @@ void editor_render(Editor *editor, int in_ecam_view, mat4 projection, mat4 view)
     }
 }
 
+/// @brief deletes a camera plane renderdata.
+/// @param cam_plane_rd camera plane renderdata
+/// @param gl_delete_texture 0 if you don't want to remove the texture from GL state machine
+void cam_plane_free(RenderData *cam_plane_rd, int gl_delete_texture)
+{
+        // This is just copied from renderdata_free but with a small difference.
+        // in the future you can slim this down if you want
+	if (cam_plane_rd->indices != NULL) {
+		free(cam_plane_rd->indices);
+        	cam_plane_rd->indices = NULL;
+	}
 
+	if (cam_plane_rd->vertices != NULL) {
+		free(cam_plane_rd->vertices);
+        	cam_plane_rd->vertices = NULL;
+	}
 
-/// @brief frees the data of an editor 
+	if (cam_plane_rd->textures != NULL) {
+                if (gl_delete_texture) {
+                        glDeleteTextures(cam_plane_rd->num_textures, cam_plane_rd->textures);
+                }
+		free(cam_plane_rd->textures);
+        	cam_plane_rd->textures = NULL;
+	}
+        
+
+	if (cam_plane_rd->vao != 0) {
+		glDeleteVertexArrays(1, &cam_plane_rd->vao);
+        	cam_plane_rd->vao = 0;
+	}	
+
+	if (cam_plane_rd->vbo != 0) {
+		glDeleteBuffers(1, &cam_plane_rd->vbo);
+        	cam_plane_rd->vbo = 0;
+	}
+   
+	if (cam_plane_rd->ebo != 0) {
+		glDeleteBuffers(1, &cam_plane_rd->ebo);
+        	cam_plane_rd->ebo = 0;
+	}
+}
+
+/// @brief frees the data of an editor. Doesnt take into account the other editors who also may have the same texture
 ///             (WARNING: It also deletes gltextures. If something else is using your texture, set the texture in the renderdata to 0)
 /// @param editor the editor you want to free
-void editor_free(Editor *editor)
+/// @param delete_texture 0 if you don't want to remove the texture from GL state machine
+void editor_free_forced(Editor *editor, int gl_delete_texture)
 {
         if (editor->hmap == NULL) {
                 free(editor->hmap);
@@ -646,10 +687,59 @@ void editor_free(Editor *editor)
         if (editor != NULL) {
                 //the functions below only frees the stuff that isn't null
                 render_data_free(&(editor->mdl_cam_proj));
-                render_data_free(&(editor->mdl_cam_plane));
                 render_data_free(&(editor->hmap_rd));
+
+                // Do not use render_data_free on cam plane because that will delete textures that another editor might have
+                cam_plane_free(&(editor->mdl_cam_plane), gl_delete_texture);
         }
 }
+
+/// @brief frees an editor "safely" in that if another editor uses the same texture, this function will not free
+///             the texture of the editor we want to delete.
+///             This is a little slower than editor_forced because we have to iterate through the editors
+/// @param editors the array of all editors
+/// @param idx_delete the index into the array of the editor you want to delete
+/// @param editors_length the length of the array passed in.
+///                             you can put a smaller amount to iterate through less editors.
+void editor_free_safe(Editor *editors, int idx_delete, int editors_length)
+{
+        if (!editors) {
+                return;
+        }
+
+        Editor *editor = editors + idx_delete;
+
+        if (!editor->mdl_cam_plane.textures) {
+                return;
+        }
+
+
+        if (editor->hmap == NULL) {
+                free(editor->hmap);
+                editor->hmap = NULL;
+        }
+
+        if (editor != NULL) {
+                render_data_free(&(editor->mdl_cam_proj));
+                render_data_free(&(editor->hmap_rd));
+
+                int gl_delete_texture = 1;
+
+                //decide whether to delete textures or not depending on if other editors use it
+                for (int i = 0; i < editors_length; i++) {
+                        if (editors[i].mdl_cam_plane.textures == NULL) {
+                                continue;
+                        }
+                        if (editors[idx_delete].mdl_cam_plane.textures[0] == editors[i].mdl_cam_plane.textures[0]) {
+                                gl_delete_texture = 0;
+                        }
+                }
+
+                // Do not use render_data_free on cam plane because that will delete textures that another editor might have
+                editor_free_forced(editor, gl_delete_texture);
+        }
+}
+
 
 /// @brief change the editor's heightmap to a sinc function. This function buffers the subdata to the vbo
 /// @param editor the editor to change its heightmap

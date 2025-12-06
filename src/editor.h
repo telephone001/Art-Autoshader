@@ -110,9 +110,25 @@ int editor_init(
 
 void editor_render(Editor *editor, int in_ecam_view, mat4 projection, mat4 view);
 
-/// @brief frees the data of an editor
+/// @brief deletes a camera plane renderdata.
+/// @param cam_plane_rd camera plane renderdata
+/// @param gl_delete_texture 0 if you don't want to remove the texture from GL state machine
+void cam_plane_free(RenderData *cam_plane_rd, int gl_delete_texture);
+
+/// @brief frees the data of an editor. Doesnt take into account the other editors who also may have the same texture
+///             (WARNING: It also deletes gltextures. If something else is using your texture, set the texture in the renderdata to 0)
 /// @param editor the editor you want to free
-void editor_free(Editor *editor);
+/// @param delete_texture 0 if you don't want to remove the texture from GL state machine
+void editor_free_forced(Editor *editor, int gl_delete_texture);
+
+/// @brief frees an editor "safely" in that if another editor uses the same texture, this function will not free
+///             the texture of the editor we want to delete.
+///             This is a little slower than editor_forced because we have to iterate through the editors
+/// @param editors the array of all editors
+/// @param idx_delete the index into the array of the editor you want to delete
+/// @param editors_length the length of the array passed in.
+///                             you can put a smaller amount to iterate through less editors.
+void editor_free_safe(Editor *editors, int idx_delete, int editors_length);
 
 
 /// @brief change the editor's heightmap to a sinc function. This function buffers the subdata to the vbo
