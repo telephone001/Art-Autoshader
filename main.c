@@ -80,6 +80,8 @@ mat4 ortho_proj; //used to actually edit the heightmap
 /// @brief 
 void opengl_settings_init()
 {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
@@ -374,8 +376,8 @@ int main()
                         double start_time = glfwGetTime(); // Start CPU timer
                         int lights_added_cpu = 0;
     
-                        for (int i = 0; i < height; i += 50) {
-                            for (int j = 0; j < width; j += 50) {
+                        for (int i = 0; i < height; i += 5) {
+                            for (int j = 0; j < width; j += 5) {
                                 float t_ray;
                                 vec3s point;
                                 int hit = ht_intersect_heightmap_ray(editors[0].hmap, editors[0].hmap_w, editors[0].hmap_l,
@@ -466,7 +468,7 @@ int main()
                 
                 for (int i = 0; i < MAX_EDITORS; i++) {
                         if (editors[i].mdl_cam_proj.vao != 0 ) {
-                                editor_render(&(editors[i]), 0, flycam_projection, flycam_view);
+                                editor_render(&(editors[i]), 0, gui_menu.hmap_opacity, flycam_projection, flycam_view);
                         }
                 }
                 
@@ -495,6 +497,7 @@ int main()
                                 editor_render(
                                         &(editors[i]), 
                                         1, 
+                                        gui_menu.hmap_opacity,
                                         (gui_menu.ecam_data.in_perspective) ? flycam_projection : ortho_proj, 
                                         offset_view
                                 );

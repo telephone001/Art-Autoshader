@@ -561,15 +561,18 @@ void cam_proj_mdl_render(RenderData *cam_proj_rdata, mat4 projection, mat4 view)
 /// @param hmap_rdata the heightmap you want to render
 /// @param hmap_row_len the length of each row in the heightmap
 /// @param in_ecam_view if we are rendering inside 
+/// @param opacity send in the opacity of the heightmap 
 /// @param projection the projection matrix
 /// @param view the view matrix
 /// @param model the transformation matrix 
-void hmap_render(RenderData *hmap_rdata, int hmap_row_len, int in_ecam_view, mat4 projection, mat4 view, mat4 model)
+void hmap_render(RenderData *hmap_rdata, int hmap_row_len, int in_ecam_view, float opacity, mat4 projection, mat4 view, mat4 model)
 {
         glBindVertexArray(hmap_rdata->vao);
         glUseProgram(hmap_rdata->shader);
 
         glUniform1i(glGetUniformLocation(hmap_rdata->shader, "hmap_row_len"), hmap_row_len);
+
+        glUniform1f(glGetUniformLocation(hmap_rdata->shader, "opacity"), opacity);
 
         glUniform1i(glGetUniformLocation(hmap_rdata->shader, "in_ecam_view"), in_ecam_view);
 
@@ -607,10 +610,14 @@ static void transform_plane_points(mat4 m, vec3 inPts[4], vec3 outPts[4])
 /// @brief renders an editor object. You are in charge of if projection and view are for flycam or editor
 /// @param editor the editor object
 /// @param in_ecam_view 1 if you are using ecam view. This is just used as a uniform to horizontally flip the shaders.
+/// @param hmap_opacity how transparent the heightmap is
 /// @param projection you are in charge of sending either an orthogonal or a perspective projection
 /// @param view you are in charge of whether you send the flycam or the editor cam
-void editor_render(Editor *editor, int in_ecam_view, mat4 projection, mat4 view)
+void editor_render(Editor *editor, int in_ecam_view, float hmap_opacity, mat4 projection, mat4 view)
 {
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
     if (in_ecam_view == 0) {
         // Render yellow projection wireframe in freefly mode
         cam_proj_mdl_render(&(editor->mdl_cam_proj), projection, view);
@@ -623,10 +630,10 @@ void editor_render(Editor *editor, int in_ecam_view, mat4 projection, mat4 view)
     // Heightmap rendering
     //
     if (in_ecam_view == 0) {
-        hmap_render(&(editor->hmap_rd), editor->hmap_l, in_ecam_view, projection, view, editor->hmap_transform.matrix);
+        hmap_render(&(editor->hmap_rd), editor->hmap_l, in_ecam_view, hmap_opacity, projection, view, editor->hmap_transform.matrix);
     } else {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        hmap_render(&(editor->hmap_rd), editor->hmap_l, in_ecam_view, projection, view, editor->hmap_transform.matrix);
+        hmap_render(&(editor->hmap_rd), editor->hmap_l, in_ecam_view, hmap_opacity, projection, view, editor->hmap_transform.matrix);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
 }

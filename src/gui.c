@@ -106,6 +106,7 @@ int nuklear_menu_init(
         	.img_tex = 0,	
         	.img_nk = {0},
 		.img_copied = 0,
+		.hmap_opacity = 1,
 		
 	};
 	
@@ -303,6 +304,12 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 	nk_label(gui_menu->ctx, "drag strength:", NK_TEXT_LEFT);
 	nk_slider_float(gui_menu->ctx, GUI_DRAG_SCALE_MIN, &drag_scale, GUI_DRAG_SCALE_MAX, 100);
 
+
+	nk_layout_row_dynamic(gui_menu->ctx, 30, 2);
+	
+	//slider
+	nk_label(gui_menu->ctx, "opacity:", NK_TEXT_LEFT);
+	nk_slider_float(gui_menu->ctx, 0, &gui_menu->hmap_opacity, 1, 0.00001);
 		
 	int width, height;
 	glfwGetWindowSize(wnd, &width, &height);

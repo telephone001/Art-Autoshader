@@ -66,10 +66,11 @@ void cam_proj_mdl_render(RenderData *cam_proj_rdata, mat4 projection, mat4 view)
 /// @param hmap_rdata the heightmap you want to render
 /// @param hmap_row_len the length of each row in the heightmap
 /// @param in_ecam_view if we are rendering inside 
+/// @param opacity send in the opacity of the heightmap 
 /// @param projection the projection matrix
 /// @param view the view matrix
 /// @param model the transformation matrix 
-void hmap_render(RenderData *hmap_rdata, int hmap_row_len, int in_ecam_view, mat4 projection, mat4 view, mat4 model);
+void hmap_render(RenderData *hmap_rdata, int hmap_row_len, int in_ecam_view, float opacity, mat4 projection, mat4 view, mat4 model);
 
 /// @brief uses an initialized hmap to build the heightmap rd, mallocing an indices array.
 ///             and the indices will be filled out
@@ -108,7 +109,14 @@ int editor_init(
         int hmap_idx_w
 );
 
-void editor_render(Editor *editor, int in_ecam_view, mat4 projection, mat4 view);
+
+/// @brief renders an editor object. You are in charge of if projection and view are for flycam or editor
+/// @param editor the editor object
+/// @param in_ecam_view 1 if you are using ecam view. This is just used as a uniform to horizontally flip the shaders.
+/// @param hmap_opacity how transparent the heightmap is
+/// @param projection you are in charge of sending either an orthogonal or a perspective projection
+/// @param view you are in charge of whether you send the flycam or the editor cam
+void editor_render(Editor *editor, int in_ecam_view, float hmap_opacity, mat4 projection, mat4 view);
 
 /// @brief deletes a camera plane renderdata.
 /// @param cam_plane_rd camera plane renderdata

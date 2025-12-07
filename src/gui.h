@@ -79,7 +79,6 @@ typedef struct MenuOptions {
 
         int font_size; //will govern the size of the letters and textboxes in the gui
 
-
         char img_path[GUI_IMG_PATH_BUFF_LEN]; //buffer where the image path is stored. (textbox buffer)
         float img_aspect_ratio; //the aspect ratio of the image (width / height)
         GLuint img_tex;   //glfw texture id of the image we want to use
@@ -87,6 +86,7 @@ typedef struct MenuOptions {
         int img_copied; //boolean for if the current image is being used by an editor (borrowed)
 
         int which_editor_selected; //indexes which editor we select
+        float hmap_opacity;
 
         //when we have a selected editor, what do we do with it?
         // this will have to be read in from main and you will have to do something based on what the editor action is in main

@@ -3,6 +3,8 @@
 out vec4 frag_color;
 in float f_height;
 
+uniform float opacity;
+
 //takes in a float and outputs a color on a spectrum.
 //taken from a previous project
 vec3 palette(float t) 
@@ -17,5 +19,5 @@ vec3 palette(float t)
 void main()
 {
         float h = (f_height+1) / 2.0f;
-        frag_color = vec4(palette(h * 0.2 - 0.1), 1.0);
+        frag_color = vec4(palette(h * 0.2 - 0.1), opacity);
 }
