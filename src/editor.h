@@ -12,7 +12,7 @@
 
 
 
-#define CAM_PROJ_MDL_DIST 10
+#define CAM_PROJ_MDL_DIST 40
 
 
 typedef struct Editor {

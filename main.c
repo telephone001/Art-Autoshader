@@ -373,17 +373,45 @@ int main()
                         glfwGetWindowSize(wnd, &width, &height);
                         vec3s* cam_dirs = ht_generate_camera_directions(&camera, width, height);
     
+                        // invert the hmap transformation
+                        mat4s inv_trans;
+                        glm_mat4_inv(editors[gui_menu.which_editor_selected].hmap_transform.matrix, inv_trans.raw);
+                        
+                        vec3s translated_cam_pos = glms_mat4_mulv3(inv_trans, camera.pos, 1);
+                
+                        //for (int i = 0; i < 4; i++) {
+                        //        for (int j = 0; j < 4; j++) {
+                        //                printf("%f ", inv_trans.raw[i][j]);
+                        //        }
+                        //        printf("\n");
+                        //}
+
+
                         double start_time = glfwGetTime(); // Start CPU timer
                         int lights_added_cpu = 0;
     
-                        for (int i = 0; i < height; i += 5) {
-                            for (int j = 0; j < width; j += 5) {
+                        for (int i = 0; i < height; i += 50) {
+                            for (int j = 0; j < width; j += 50) {
                                 float t_ray;
                                 vec3s point;
-                                int hit = ht_intersect_heightmap_ray(editors[0].hmap, editors[0].hmap_w, editors[0].hmap_l,
-                                    camera.pos, cam_dirs[i * width + j], 0.1f, 500.0f, &t_ray, &point);
+
+                                vec3s translated_cam_dirs = glms_mat4_mulv3(inv_trans, cam_dirs[i*height + j], 1);
+
+                                int hit = ht_intersect_heightmap_ray(
+                                        editors[gui_menu.which_editor_selected].hmap, 
+                                        editors[gui_menu.which_editor_selected].hmap_w, 
+                                        editors[gui_menu.which_editor_selected].hmap_l,
+                                        translated_cam_pos, 
+                                        translated_cam_dirs, 
+                                        0.1f, 
+                                        500.0f, 
+                                        &t_ray, 
+                                        &point
+                                );
+
                                 if (hit) {
                                     vec3s world_point = glms_vec3_add(camera.pos, glms_vec3_scale(cam_dirs[i * width + j], t_ray));
+                                    
                                     light_source_add(&light_sources_data, (LightSource) { POINT, world_point, 1.0f });
                                     printf("CPU Hit at t=%.6f: %.6f %.6f %.6f\n", t_ray, V3_X(world_point), V3_Y(world_point), V3_Z(world_point));
                                     lights_added_cpu++; // Increment CPU lights count
