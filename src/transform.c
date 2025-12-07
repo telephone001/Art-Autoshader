@@ -90,31 +90,35 @@ void hmap_transform_from_plane(
     glm_vec3_cross(uVec, vVec, normal);
     glm_vec3_normalize(normal);
 
-    float heightScale = 0.075f * t->scale[1];
+    float heightScale = 0.75f * t->scale[1];
     vec3 heightAxis;
     glm_vec3_scale(normal, heightScale, heightAxis);
 
     // Fill matrix
     glm_mat4_identity(t->matrix);
 
+    //CGLM HAS BETRAYED US
+    //CGLM USES COLUMN MAJOR
+
     // U-axis
     t->matrix[0][0] = uStep[0];
-    t->matrix[1][0] = uStep[1];
-    t->matrix[2][0] = uStep[2];
+    t->matrix[0][1] = uStep[1];
+    t->matrix[0][2] = uStep[2];
 
     // Height axis
-    t->matrix[0][1] = heightAxis[0];
+    t->matrix[1][0] = heightAxis[0];
     t->matrix[1][1] = heightAxis[1];
-    t->matrix[2][1] = heightAxis[2];
+    t->matrix[1][2] = heightAxis[2];
 
     // V-axis
-    t->matrix[0][2] = vStep[0];
-    t->matrix[1][2] = vStep[1];
+    t->matrix[2][0] = vStep[0];
+    t->matrix[2][1] = vStep[1];
     t->matrix[2][2] = vStep[2];
 
     // Translation (origin)
-    t->matrix[0][3] = planePts[0][0];
-    t->matrix[1][3] = planePts[0][1];
-    t->matrix[2][3] = planePts[0][2];
+    t->matrix[3][0] = planePts[0][0];
+    t->matrix[3][1] = planePts[0][1];
+    t->matrix[3][2] = planePts[0][2];
+
 }
 

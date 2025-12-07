@@ -507,8 +507,6 @@ int editor_init(
         plane_pts[3][2] = editor->mdl_cam_plane.vertices[15 + 2];
 
 
-        editor->hmap_transform.matrix[3][3] = 1;
-
         hmap_transform_from_plane(&editor->hmap_transform, plane_pts, editor->hmap_w, editor->hmap_l);
 
 
@@ -576,8 +574,9 @@ void hmap_render(RenderData *hmap_rdata, int hmap_row_len, int in_ecam_view, flo
 
         glUniform1i(glGetUniformLocation(hmap_rdata->shader, "in_ecam_view"), in_ecam_view);
 
+        //we will use column major :(
         GLint modelLoc = glGetUniformLocation(hmap_rdata->shader, "model");
-        glUniformMatrix4fv(modelLoc, 1, GL_TRUE, (float*)model);
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, (float*)model);
 
 
         glUniformMatrix4fv(glGetUniformLocation(hmap_rdata->shader, "view"), 1, GL_FALSE, (float*)view);
@@ -617,7 +616,7 @@ void editor_render(Editor *editor, int in_ecam_view, float hmap_opacity, mat4 pr
 {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    
+
     if (in_ecam_view == 0) {
         // Render yellow projection wireframe in freefly mode
         cam_proj_mdl_render(&(editor->mdl_cam_proj), projection, view);
