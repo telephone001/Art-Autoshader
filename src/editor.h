@@ -28,6 +28,10 @@ typedef struct Editor {
 
         Transform hmap_transform; //matrix for transorming heightmap
 
+        GLuint hmap_tex;   // GL_R32F heightmap texture
+        GLuint hmap_fbo;   // FBO bound to the texture
+        GLuint brush_vao;  // fullscreen quad VAO (for rendering brush)
+
 } Editor;
 
 
