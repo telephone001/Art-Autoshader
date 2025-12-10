@@ -45,6 +45,7 @@ typedef enum MenuState {
         MENU_STATE_HEIGHTMAP_EDIT,
         MENU_STATE_EDITOR_SELECT,
 		MENU_STATE_BRUSH_SELECT,
+        MENU_STATE_VIEW_OUTPUT,  // this state is for viewing our raytraced image that we created
         NUM_STATES
 } MenuState;
 
@@ -92,10 +93,16 @@ typedef struct MenuOptions {
         int which_editor_selected; //indexes which editor we select
         float hmap_opacity;
 
+        
+        GLuint output_tex; //the texture of the raytraced image
+        struct nk_image output_tex_nk; //the nk struct version of the output texture
+
+
         //when we have a selected editor, what do we do with it?
         // this will have to be read in from main and you will have to do something based on what the editor action is in main
         EditorSelectAction editor_action;
 
+        // THERE SHOULD ONLY BE ONE EDITOR CAM
         EditorCamData ecam_data;  // struct containing all the parts of the editor camera's data required for rendering
 } MenuOptions;
 

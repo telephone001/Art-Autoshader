@@ -90,7 +90,7 @@ int nuklear_menu_init(
 		.font_size = font_size,
 		.which_editor_selected = 0,
 		.editor_action = EDITOR_ACTION_IDLE,
-
+		
 	// These are created in this function below
 		.ctx = NULL, 
 		.glfw = {0},
@@ -107,6 +107,9 @@ int nuklear_menu_init(
         	.img_nk = {0},
 		.img_copied = 0,
 		.hmap_opacity = 0.5,
+		.output_tex = 0,
+		.output_tex_nk = {0},
+		
 		
 	};
 	
@@ -142,6 +145,7 @@ int nuklear_menu_init(
 
 	return 0;
 }
+
 
 
 /// @brief dynamically fits a nk image into the reminaing space of a gui menu.
@@ -278,6 +282,10 @@ static void state_main_render(MenuOptions *const gui_menu)
 		gui_menu->state = MENU_STATE_EDITOR_SELECT;
 	}
 
+	nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
+	if (nk_button_label(gui_menu->ctx, "view output")) {
+		gui_menu->state = MENU_STATE_VIEW_OUTPUT;
+	}
 }
 
 
@@ -397,6 +405,13 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 	}
 }
 
+static void state_view_output(MenuOptions *const gui_menu)
+{
+	nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
+	if (nk_button_label(gui_menu->ctx, "back to main menu")) {
+		gui_menu->state = MENU_STATE_MAIN;
+	}
+}
 
 static void state_select_editor(MenuOptions *const gui_menu)
 {
@@ -480,6 +495,9 @@ void nuklear_menu_render(GLFWwindow *wnd, float delta_time, MenuOptions *const g
 			state_select_editor(gui_menu);
 			break;
 		
+		case MENU_STATE_VIEW_OUTPUT:
+			state_view_output(gui_menu);
+			break;
 
 		default:
 			nk_layout_row_static(gui_menu->ctx, 30, 200, 1);

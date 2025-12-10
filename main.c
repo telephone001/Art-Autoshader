@@ -219,6 +219,7 @@ void framebuffer_size_callback(GLFWwindow *const window, int width, int height)
 }
 
 
+
 int main() 
 {
         if (!glfwInit()) return -1;
