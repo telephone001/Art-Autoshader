@@ -16,7 +16,7 @@ void transform_init(Transform* t) {
     glm_vec3_zero(t->z_axis);
     glm_vec3_zero(t->origin);
 
-    t->height_scale = 1.0f;
+    t->height_scale = HEIGHT_SCALE_DEFAULT;
 }
 
 /* ---------------------------------------------------------
@@ -90,9 +90,8 @@ void hmap_transform_from_plane(
     glm_vec3_cross(uVec, vVec, normal);
     glm_vec3_normalize(normal);
 
-    float heightScale = 0.75f * t->scale[1];
     vec3 heightAxis;
-    glm_vec3_scale(normal, heightScale, heightAxis);
+    glm_vec3_scale(normal, t->height_scale, heightAxis);
 
     // Fill matrix
     glm_mat4_identity(t->matrix);
@@ -120,5 +119,10 @@ void hmap_transform_from_plane(
     t->matrix[3][1] = planePts[0][1];
     t->matrix[3][2] = planePts[0][2];
 
+    // Translation will also be offset by a really tiny number to avoid zfighting
+    float tiny_offset_for_zfighting = 0.01 / t->height_scale;
+    t->matrix[3][0] += heightAxis[0] * tiny_offset_for_zfighting;
+    t->matrix[3][1] += heightAxis[1] * tiny_offset_for_zfighting;
+    t->matrix[3][2] += heightAxis[2] * tiny_offset_for_zfighting;
 }
 

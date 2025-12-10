@@ -106,7 +106,7 @@ int nuklear_menu_init(
         	.img_tex = 0,	
         	.img_nk = {0},
 		.img_copied = 0,
-		.hmap_opacity = 1,
+		.hmap_opacity = 0.5,
 		
 	};
 	
