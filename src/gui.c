@@ -286,6 +286,11 @@ static void state_main_render(MenuOptions *const gui_menu)
 	if (nk_button_label(gui_menu->ctx, "view output")) {
 		gui_menu->state = MENU_STATE_VIEW_OUTPUT;
 	}
+
+	nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
+	if (nk_button_label(gui_menu->ctx, "view output")) {
+		gui_menu->state = MENU_STATE_BRUSH_SELECt;
+	}
 }
 
 
@@ -557,6 +562,10 @@ void nuklear_menu_render(GLFWwindow *wnd, float delta_time, MenuOptions *const g
 		
 		case MENU_STATE_VIEW_OUTPUT:
 			state_view_output(gui_menu);
+			break;
+
+		case MENU_STATE_BRUSH_SELECT:
+			state_select_brush(gui_menu);
 			break;
 
 		default:
