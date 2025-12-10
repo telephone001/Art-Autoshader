@@ -50,6 +50,7 @@ typedef enum MenuState {
 
 typedef enum EditorSelectAction {
         EDITOR_ACTION_IDLE, //do nothing
+        EDITOR_ACTION_HMAP_EDIT, //edits the hmap
         EDITOR_ACTION_DELETE, //Deletes the editor
         EDITOR_ACTION_GOTO, // teleports the flycam to the editor selected
         EDITOR_ACTION_MOVE, //lets you move the editor

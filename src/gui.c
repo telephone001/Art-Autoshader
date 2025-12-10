@@ -330,7 +330,7 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 			gui_menu->ctx, 
 			gui_menu->ecam_data.tex_nk, 
 			(float)gui_menu->ecam_data.width / (float)gui_menu->ecam_data.height, 
-			100
+			150
 		);
 	} else {
 		// display an error message if texture not found
@@ -353,6 +353,9 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 	//we have to change position of corner to be topleft for nk_input_is_mouse_hovering_rect
 	img_rect.y -= img_rect.h;
 
+	//By default make editor action be idle. Only change this if we edit the heightmap
+	gui_menu->editor_action = EDITOR_ACTION_IDLE;
+
 	// handle mouse dragging behaviors in editor
 	if (nk_input_is_mouse_hovering_rect(&gui_menu->ctx->input, img_rect)) {
 
@@ -372,10 +375,11 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 			gui_menu->ecam_data.mouse_offset.x = (mouse_x - img_rect.x) / img_rect.w;
 			gui_menu->ecam_data.mouse_offset.y = (img_rect.y - mouse_y) / img_rect.h;
 
-			printf("%f %f\n",
-				gui_menu->ecam_data.mouse_offset.x,
-				gui_menu->ecam_data.mouse_offset.y
-			);
+			//printf("%f %f\n",
+			//	gui_menu->ecam_data.mouse_offset.x,
+			//	gui_menu->ecam_data.mouse_offset.y
+			//);
+			gui_menu->editor_action = EDITOR_ACTION_HMAP_EDIT;
 		}
 
 		//printf("%f %f\n", gui_menu->ecam_offset.x, gui_menu->ecam_offset.y);
@@ -383,7 +387,6 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 		prev_mouse_x = mouse_x;
 		prev_mouse_y = mouse_y;
 	}
-
 }
 
 

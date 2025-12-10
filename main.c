@@ -40,8 +40,7 @@
 
 #define MAX_EDITORS 100
 
-
-#define ORTHO_SCALE 1.0 / 100.0
+#define ORTHO_SCALE 1.0/100.0
 
 extern Camera camera; //handler for cameradata;
 extern int in_menu;   //menu status
@@ -50,7 +49,7 @@ extern int in_menu;   //menu status
 typedef enum DebugThing {
         DEBUG_NONE,
         SPAWN_EDITOR,
-        DELETE_EVERYTHING,
+        DELETE_LIGHTS,
         SPAWN_POINT_LIGHT,
         SPAWN_DIRECTIONAL_LIGHT,
         SPAWN_LIGHTS_FOR_CAMERA_RAYS,
@@ -168,7 +167,7 @@ void key_callback_menu_switching(
 	        }
 
                 if (key == GLFW_KEY_P && action == GLFW_PRESS) debug_thing = SPAWN_EDITOR;
-                if (key == GLFW_KEY_L && action == GLFW_PRESS) debug_thing = DELETE_EVERYTHING;
+                if (key == GLFW_KEY_L && action == GLFW_PRESS) debug_thing = DELETE_LIGHTS;
                 if (key == GLFW_KEY_1 && action == GLFW_PRESS) debug_thing = SPAWN_POINT_LIGHT;
                 if (key == GLFW_KEY_2 && action == GLFW_PRESS) debug_thing = SPAWN_DIRECTIONAL_LIGHT;
                 if (key == GLFW_KEY_5 && action == GLFW_PRESS) debug_thing = CPU_TEST_RAYTRACE;
@@ -274,7 +273,7 @@ int main()
 
 
         GLuint point_light_tex, directional_light_tex;
-        load_2dtexture(&point_light_tex, "textures/point_light.jpg", GL_RGB);
+        load_2dtexture(&point_light_tex, "textures/sprinkles.png", GL_RGB);
         load_2dtexture(&directional_light_tex, "textures/directional_light.jpg", GL_RGB);
 
         LightSourcesData light_sources_data = {0};
@@ -338,16 +337,7 @@ int main()
                 }
 
                 // delete editor AND light sources
-                if (debug_thing == DELETE_EVERYTHING) {
-                        edit_idx = 0;
-                        for (int i = 0; i < MAX_EDITORS; i++) {
-                                //Required before editor_free if gui_menu is using the texture.
-                                if (editors[i].mdl_cam_plane.textures != NULL && 
-                                    gui_menu.img_tex == editors[i].mdl_cam_plane.textures[0]) {
-                                        editors[i].mdl_cam_plane.textures[0] = 0;
-                                }
-                                editor_free_forced(&(editors[i]), 1);
-                        }
+                if (debug_thing == DELETE_LIGHTS) {
 
                         for (int i = 0; i < MAX_LIGHT_SOURCES; i++) {
                                 light_sources_data.lights[i] = (LightSource){0};
@@ -553,6 +543,26 @@ int main()
                         case EDITOR_ACTION_GOTO:
                                 camera = editors[gui_menu.which_editor_selected].cam;
                                 gui_menu.editor_action = EDITOR_ACTION_IDLE;
+                                break;
+                        
+                        case EDITOR_ACTION_HMAP_EDIT:
+                                Camera ecam = editors[gui_menu.which_editor_selected].cam;
+                                float brush_pnt_right = 2 * gui_menu.ecam_data.mouse_offset.x * SCR_LENGTH * ORTHO_SCALE - (SCR_LENGTH * ORTHO_SCALE);
+                                float brush_pnt_up = 2 * gui_menu.ecam_data.mouse_offset.y * SCR_HEIGHT * ORTHO_SCALE - (SCR_HEIGHT * ORTHO_SCALE);
+                                
+                                brush_pnt_right += gui_menu.ecam_data.pos_offset.x;
+                                brush_pnt_up += gui_menu.ecam_data.pos_offset.y;
+
+                                vec3s brush_pnt = ecam.pos;
+                                brush_pnt = glms_vec3_add(brush_pnt, glms_vec3_scale(ecam.right,brush_pnt_right));
+                                brush_pnt = glms_vec3_add(brush_pnt, glms_vec3_scale(ecam.up,brush_pnt_up));
+
+                                mat4s inv_trans;
+                                glm_mat4_inv(editors[gui_menu.which_editor_selected].hmap_transform.matrix, inv_trans.raw);
+                                // apply inverse transform
+                                brush_pnt = glms_mat4_mulv3(inv_trans, brush_pnt, 1);
+
+                                printf("%f %f\n", brush_pnt.x, brush_pnt.z);
                                 break;
 
                         case EDITOR_ACTION_DELETE:

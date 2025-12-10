@@ -1,6 +1,5 @@
 CC = gcc
 
-
 myutil := ./new_myutility
 lib := ./lib
 
