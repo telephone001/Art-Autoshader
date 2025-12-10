@@ -288,7 +288,7 @@ static void state_main_render(MenuOptions *const gui_menu)
 	}
 
 	nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
-	if (nk_button_label(gui_menu->ctx, "view output")) {
+	if (nk_button_label(gui_menu->ctx, "brush tool")) {
 		gui_menu->state = MENU_STATE_BRUSH_SELECT;
 	}
 }
@@ -305,11 +305,6 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 	if (nk_button_label(gui_menu->ctx, "reset offset")) {
 		gui_menu->ecam_data.pos_offset.x = 0;
 		gui_menu->ecam_data.pos_offset.y = 0;
-	}
-
-	nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
-	if (nk_button_label(gui_menu->ctx, "brush tool")) {
-    		gui_menu->editor_action = EDITOR_ACTION_BRUSH;
 	}
 	
 	nk_layout_row_dynamic(gui_menu->ctx, 30, 3);
