@@ -2,6 +2,7 @@
 #define  NK_GLFW_GL3_IMPLEMENTATION
 
 #include "gui.h"
+#include "editor.h"
 
 
 
