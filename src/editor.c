@@ -646,9 +646,7 @@ void editor_render(Editor *editor, int in_ecam_view, float hmap_opacity, mat4 pr
     if (in_ecam_view == 0) {
         hmap_render(&(editor->hmap_rd), editor->hmap_l, in_ecam_view, hmap_opacity, projection, view, editor->hmap_transform.matrix);
     } else {
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         hmap_render(&(editor->hmap_rd), editor->hmap_l, in_ecam_view, hmap_opacity, projection, view, editor->hmap_transform.matrix);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
 }
 

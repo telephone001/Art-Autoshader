@@ -111,6 +111,11 @@ int nuklear_menu_init(
 		.output_tex = 0,
 		.output_tex_nk = {0},
 		
+
+		.brush_size = 4,
+		.brush_strength = 0.01,
+		.brush_mode = 0,   // 0 = raise, 1 = lower, 2 = smooth, 3 = flatten
+		.brush_enabled = 1,
 		
 	};
 	
@@ -303,7 +308,7 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 	}
 
 	nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
-	if (nk_button_label(gui_menu->ctx, "reset offset")) {
+	if (nk_button_label(gui_menu->ctx, "center")) {
 		gui_menu->ecam_data.pos_offset.x = 0;
 		gui_menu->ecam_data.pos_offset.y = 0;
 	}
@@ -490,7 +495,6 @@ static void state_select_brush(MenuOptions *const gui_menu)
     // -------------------------
     // Brush Size
     // -------------------------
-    static float brush_size = 10.0f;
     nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
     nk_label(gui_menu->ctx, "Brush Size", NK_TEXT_LEFT);
     nk_slider_float(gui_menu->ctx, 1.0f, &gui_menu->brush_size, 100.0f, 1.0f);
@@ -498,19 +502,10 @@ static void state_select_brush(MenuOptions *const gui_menu)
     // -------------------------
     // Brush Strength
     // -------------------------
-    static float brush_strength = 0.2f;
     nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
     nk_label(gui_menu->ctx, "Brush Strength", NK_TEXT_LEFT);
-    nk_slider_float(gui_menu->ctx, 0.0f, &gui_menu->brush_strength, 1.0f, 0.01f);
+    nk_slider_float(gui_menu->ctx, 0.0f, &gui_menu->brush_strength, 0.25f, 0.001f);
 
-    // -------------------------
-    // Debug Button
-    // -------------------------
-    nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
-    if (nk_button_label(gui_menu->ctx, "Apply Test Brush")) {
-        printf("DEBUG: Apply Brush (mode=%d, size=%.2f, strength=%.2f)\n",
-            brush_mode, brush_size, brush_strength);
-    }
 }
 
 

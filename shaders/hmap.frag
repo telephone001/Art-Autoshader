@@ -18,6 +18,6 @@ vec3 palette(float t)
 
 void main()
 {
-        float h = (f_height+1) / 2.0f;
-        frag_color = vec4(palette(h * 0.2 - 0.1), opacity);
+        float h = (f_height+1) / 5.0f;
+        frag_color = vec4(palette(h * 0.2 - 0.05), opacity);
 }
