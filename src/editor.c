@@ -870,69 +870,33 @@ void hmap_edit_zero(Editor *editor)
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void apply_brush(Editor *ed, float nx, float ny, MenuOptions *gui)
+void apply_brush(Editor* editor, int cx, int cz, int radius, float strength)
 {
-    int w = ed->hmap_width;
-    int h = ed->hmap_height;
+    int w = editor->hmap_w;
+    int h = editor->hmap_l;
 
-    // convert normalized to pixel
-    int cx = (int)(nx * w);
-    int cy = (int)(ny * h);
+    for (int dz = -radius; dz <= radius; dz++)
+    for (int dx = -radius; dx <= radius; dx++)
+    {
+        int x = cx + dx;
+        int z = cz + dz;
 
-    float radius = gui->brush_size;
-    float strength = gui->brush_strength;
+        if (x < 0 || x >= w || z < 0 || z >= h)
+            continue;
 
-    for (int y = -radius; y <= radius; y++) {
-        for (int x = -radius; x <= radius; x++) {
+        float dist = sqrtf(dx*dx + dz*dz);
+        if (dist > radius)
+            continue;
 
-            int px = cx + x;
-            int py = cy + y;
+        float falloff = 1.f - (dist / radius);
 
-            if (px < 0 || py < 0 || px >= w || py >= h)
-                continue;
-
-            // circle mask
-            float dist = sqrtf(x*x + y*y);
-            if (dist > radius)
-                continue;
-
-            float falloff = 1.0f - (dist / radius);
-
-            float *val = &ed->height_map[py * w + px];
-
-            switch (gui->brush_mode) {
-                case 0: // raise
-                    *val += strength * falloff;
-                    break;
-                case 1: // lower
-                    *val -= strength * falloff;
-                    break;
-                case 2: // smooth
-                {
-                    float avg = 0.0f;
-                    int count = 0;
-
-                    for (int yy = -1; yy <= 1; yy++)
-                        for (int xx = -1; xx <= 1; xx++) {
-                            int sx = px + xx, sy = py + yy;
-                            if (sx >= 0 && sy >= 0 && sx < w && sy < h) {
-                                avg += ed->height_map[sy*w + sx];
-                                count++;
-                            }
-                        }
-
-                    avg /= count;
-                    *val = (*val * (1 - strength)) + (avg * strength);
-                }
-                break;
-
-                case 3: // flatten
-                    *val = gui->flatten_target_height; // you can define a constant if you want
-                    break;
-            }
-        }
+        editor->hmap[z * w + x] += strength * falloff;
     }
 
-    ed->needs_upload = 1;
+    // Upload updated heightmap to GPU
+    glBindBuffer(GL_ARRAY_BUFFER, editor->hmap_rd.vbo);
+    glBufferSubData(GL_ARRAY_BUFFER, 0,
+        editor->hmap_rd.vertices_length * sizeof(float),
+        editor->hmap_rd.vertices);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
-
