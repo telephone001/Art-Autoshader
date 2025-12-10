@@ -4,8 +4,6 @@
 #include "gui.h"
 #include "editor.h"
 
-extern Editor* g_editors;
-extern int g_editor_count;
 
 
 /// @brief creates an ecam_data given the width and height of framebuffer
@@ -312,7 +310,7 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 	
 	nk_layout_row_dynamic(gui_menu->ctx, 30, 3);
 
-	nk_checkbox_label(gui_menu->ctx, "edit_mode", &gui_menu->ecam_data.in_perspective);
+	nk_checkbox_label(gui_menu->ctx, "perspective", &gui_menu->ecam_data.in_perspective);
 
 	//slider
 	static float drag_scale = GUI_DRAG_SCALE_MIN;
@@ -387,61 +385,22 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 
 		//left click means edit
 		if (glfwGetMouseButton(wnd, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
-
-    // Compute UV position (already correct)
-    gui_menu->ecam_data.mouse_offset.x = (mouse_x - img_rect.x) / img_rect.w;
-    gui_menu->ecam_data.mouse_offset.y = (img_rect.y - mouse_y) / img_rect.h;
-
-    // ---------------------------------------------------------
-    // NEW: Convert UV → heightmap grid coordinates
-    // ---------------------------------------------------------
-    Editor* editor = &g_editors[gui_menu->which_editor_selected];
-
-    int bx = gui_menu->ecam_data.mouse_offset.x * editor->hmap_w;
-    int bz = gui_menu->ecam_data.mouse_offset.y * editor->hmap_l;
-
-    // Clamp (recommended)
-    if (bx < 0) bx = 0;
-    if (bx >= editor->hmap_w) bx = editor->hmap_w - 1;
-
-    if (bz < 0) bz = 0;
-    if (bz >= editor->hmap_l) bz = editor->hmap_l - 1;
-
-    // ---------------------------------------------------------
-    // Apply brush only when brush mode enabled
-    // ---------------------------------------------------------
-    if (gui_menu->brush_enabled) {
-
-        apply_brush(
-            editor,
-            bx, bz,
-            gui_menu->brush_size,
-            gui_menu->brush_strength,
-            gui_menu->brush_mode
-        );
-    }
-
-    // original heightmap edit logic
-    if (gui_menu->ecam_data.in_perspective == 0)
-        gui_menu->editor_action = EDITOR_ACTION_HMAP_EDIT;
-}
-			
-			//printf("%f %f\n",
-			//	gui_menu->ecam_data.mouse_offset.x,
-			//	gui_menu->ecam_data.mouse_offset.y
-			//);
-
-			// brush tool should only work in orthographic projection. 
-			if (gui_menu->ecam_data.in_perspective == 0) {
-				gui_menu->editor_action = EDITOR_ACTION_HMAP_EDIT;
-			}
+		    	gui_menu->ecam_data.mouse_offset.x = (mouse_x - img_rect.x) / img_rect.w;
+		    	gui_menu->ecam_data.mouse_offset.y = (img_rect.y - mouse_y) / img_rect.h;
+		    
+		    	// original heightmap edit logic
+		    	if (gui_menu->ecam_data.in_perspective == 0)
+		    	    gui_menu->editor_action = EDITOR_ACTION_HMAP_EDIT;
 		}
-
-		//printf("%f %f\n", gui_menu->ecam_offset.x, gui_menu->ecam_offset.y);
-
-		prev_mouse_x = mouse_x;
-		prev_mouse_y = mouse_y;
 	}
+
+	//printf("%f %f\n", gui_menu->ecam_offset.x, gui_menu->ecam_offset.y);
+
+	prev_mouse_x = mouse_x;
+	prev_mouse_y = mouse_y;
+}
+
+
 
 
 static void state_view_output(MenuOptions *const gui_menu)

@@ -33,9 +33,6 @@
 
 #endif
 
-// Global editor array accessible from gui.c
-Editor* g_editors = NULL;
-int g_editor_count = 0;
 
 #define SCR_LENGTH 800
 #define SCR_HEIGHT 800
@@ -220,6 +217,124 @@ void framebuffer_size_callback(GLFWwindow *const window, int width, int height)
 	glViewport(0, 0, width, height);
 }
 
+//spaghetti code right now. Clean up later
+GLuint raytrace(GLFWwindow *wnd, MenuOptions *gui_menu, Editor *editors, LightSource *lights, int num_light_sources)
+{
+        int width, height;
+        glfwGetWindowSize(wnd, &width, &height);
+        vec3s* cam_dirs_uncompressed = ht_generate_camera_directions(&camera, width, height);
+    
+        // invert the hmap transformation
+        mat4s inv_trans;
+        glm_mat4_inv(editors[gui_menu->which_editor_selected].hmap_transform.matrix, inv_trans.raw);
+
+        mat4s trans;
+        glm_mat4_copy(editors[gui_menu->which_editor_selected].hmap_transform.matrix, trans.raw);
+
+
+        vec3s translated_cam_pos = glms_mat4_mulv3(inv_trans, camera.pos, 1);
+
+
+
+        //how much to compress the raytrace image so we don't have to do so much computation
+        const int compression = 25;
+        int cmp_height = height / compression;
+        int cmp_width = width / compression;
+
+
+        vec3s* cam_dirs = malloc(sizeof(vec3s) * (cmp_width) * (cmp_height));
+
+        //compress
+        for (int i = 0; i < height; i += compression) {
+                for (int j = 0; j < width; j += compression) {
+                        cam_dirs[i/compression * width + j/compression] = cam_dirs_uncompressed[i*width+j];
+                }
+        }
+
+        free(cam_dirs_uncompressed);
+
+        //where is the intersection?
+        vec3s *pos = malloc(sizeof(vec3s) * (cmp_width) * (cmp_height));
+    
+        for (int i = 0; i < cmp_height; i++) {
+                for (int j = 0; j < cmp_width; j++) {
+                        float t_ray;
+                        vec3s point;
+                        
+                        // LAST PARAM HAS TO BE 0. TREAT IT AS A DIRECTION
+                        vec3s transformed_cam_dirs = glms_mat4_mulv3(inv_trans, cam_dirs[i*width + j], 0);
+                        
+                        
+                        int hit = ht_intersect_heightmap_ray(
+                                editors[gui_menu->which_editor_selected].hmap, 
+                                editors[gui_menu->which_editor_selected].hmap_w, 
+                                editors[gui_menu->which_editor_selected].hmap_l,
+                                translated_cam_pos, 
+                                transformed_cam_dirs, 
+                                0.1f, 
+                                500.0f, 
+                                &t_ray, 
+                                &point
+                        );
+                    
+                        if (hit) {
+                                vec3s world_point = glms_mat4_mulv3(trans, point, 1);
+                                pos[i*cmp_width+j] = world_point;
+                        } else {
+                                //junk
+                                pos[i*cmp_width+j] = (vec3s){-9999999,-9999999,-9999999};
+                        }
+                }
+        }
+
+        float *intensities = malloc(sizeof(float) * (cmp_width) * (cmp_height));
+
+
+
+        
+        for (int i = 0; i < cmp_height; i++) {
+                for (int j = 0; j < cmp_width; j++) {
+                        if ( pos[i*cmp_width+j].x < -999999) {
+                                intensities[i*cmp_width+j] = 0;
+                        }
+
+                        for (int k = 0; k < num_light_sources; k++) {
+                                float t_ray;
+                                vec3s intersec;
+
+
+                                vec3s dir = glms_vec3_normalize(glms_vec3_sub(lights[k].pos, pos[i*cmp_width+j]));
+
+                                // LAST PARAM HAS TO BE 0. TREAT IT AS A DIRECTION
+                                vec3s dir_trans = glms_mat4_mulv3(inv_trans, dir, 0);
+                                
+                                
+                                int hit = ht_intersect_heightmap_ray(
+                                        editors[gui_menu->which_editor_selected].hmap, 
+                                        editors[gui_menu->which_editor_selected].hmap_w, 
+                                        editors[gui_menu->which_editor_selected].hmap_l,
+                                        translated_cam_pos, 
+                                        dir_trans, 
+                                        0.1f, 
+                                        500.0f, 
+                                        &t_ray, 
+                                        &intersec
+                                );
+                        
+                                if (!hit) {
+                                        printf("ERR raytrace\n");
+                                } else {
+                                        vec3s world_intersec = glms_mat4_mulv3(trans, intersec, 1);
+                                }
+                        }
+                }
+        }
+
+
+
+        free(pos);
+        free(intensities);
+}
 
 
 int main() 
@@ -287,10 +402,6 @@ int main()
         // THIS IS FOR DEBUGGING
         Editor editors[MAX_EDITORS] = {0};
         int edit_idx = 0; // if we were to add another editor, at what idx will it be added in editors
-
-		// Make editors accessible from gui.c
-		g_editors = editors;
-		g_editor_count = MAX_EDITORS;
 
         glfwSetInputMode(wnd, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         GL_PRINT_ERR();
@@ -569,7 +680,10 @@ int main()
                                 // apply inverse transform
                                 brush_pnt = glms_mat4_mulv3(inv_trans, brush_pnt, 1);
 
-                                printf("%f %f\n", brush_pnt.x, brush_pnt.z);
+                                
+                                apply_brush(&editors[gui_menu.which_editor_selected], brush_pnt.x, brush_pnt.z, gui_menu.brush_size, gui_menu.brush_strength, gui_menu.brush_mode);
+                                
+
                                 break;
 
                         case EDITOR_ACTION_DELETE:

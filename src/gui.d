@@ -133,7 +133,9 @@ src/gui.o: src/gui.c src/gui.h lib/cglm/include/cglm/struct.h \
  lib/glad/include/GLAD/glad.h new_myutility/opengl_util.h \
  lib/stb/stb_image.h new_myutility/opengl_rbo_util.h \
  lib/glfw/include/GLFW/glfw3.h lib/Nuklear/nuklear.h \
- new_myutility/nuklear_glfw_gl3.h lib/stb/stb_include.h
+ new_myutility/nuklear_glfw_gl3.h lib/stb/stb_include.h src/editor.h \
+ src/transform.h lib/cglm/include/cglm/cglm.h new_myutility/glfw_window.h \
+ lib/cglm/include/cglm/cam.h
 src/gui.h:
 lib/cglm/include/cglm/struct.h:
 lib/cglm/include/cglm/cglm.h:
@@ -309,3 +311,8 @@ lib/glfw/include/GLFW/glfw3.h:
 lib/Nuklear/nuklear.h:
 new_myutility/nuklear_glfw_gl3.h:
 lib/stb/stb_include.h:
+src/editor.h:
+src/transform.h:
+lib/cglm/include/cglm/cglm.h:
+new_myutility/glfw_window.h:
+lib/cglm/include/cglm/cam.h:

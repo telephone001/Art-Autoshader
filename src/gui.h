@@ -38,10 +38,6 @@
 #define GUI_DRAG_SCALE_MIN 2000
 #define GUI_DRAG_SCALE_MAX 50000
 
-struct Editor;  // forward declare the struct
-
-extern struct Editor* g_editors;
-extern int g_editor_count;
 
 // If we ever want to make more states, we can. But right now there will only be one state
 typedef enum MenuState {
@@ -154,9 +150,6 @@ int editor_cam_data_init(EditorCamData *ecam_data, int width, int height);
 /// @param gui_menu gui menu
 void nuklear_menu_render(GLFWwindow *wnd, float delta_time, MenuOptions *const gui_menu);
 
-struct Editor;
-extern struct Editor* g_editors;
-extern int g_editor_count;
 
 
 #endif
