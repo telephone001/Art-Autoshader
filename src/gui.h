@@ -104,6 +104,11 @@ typedef struct MenuOptions {
 
         // THERE SHOULD ONLY BE ONE EDITOR CAM
         EditorCamData ecam_data;  // struct containing all the parts of the editor camera's data required for rendering
+
+		float brush_size;
+		float brush_strength;
+		int brush_mode;   // 0 = raise, 1 = lower, 2 = smooth, 3 = flatten
+		int brush_enabled;
 } MenuOptions;
 
 
