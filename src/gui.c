@@ -279,6 +279,7 @@ static void state_main_render(MenuOptions *const gui_menu)
 	if (nk_button_label(gui_menu->ctx, "select editor")) {
 		gui_menu->state = MENU_STATE_EDITOR_SELECT;
 	}
+
 }
 
 
@@ -295,6 +296,11 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 		gui_menu->ecam_data.pos_offset.y = 0;
 	}
 
+	nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
+	if (nk_button_label(gui_menu->ctx, "brush tool")) {
+    gui_menu->editor_action = EDITOR_ACTION_BRUSH;
+	}
+	
 	nk_layout_row_dynamic(gui_menu->ctx, 30, 3);
 
 	nk_checkbox_label(gui_menu->ctx, "perspective", &gui_menu->ecam_data.in_perspective);
@@ -471,6 +477,7 @@ void nuklear_menu_render(GLFWwindow *wnd, float delta_time, MenuOptions *const g
 		case MENU_STATE_EDITOR_SELECT:
 			state_select_editor(gui_menu);
 			break;
+		
 
 		default:
 			nk_layout_row_static(gui_menu->ctx, 30, 200, 1);

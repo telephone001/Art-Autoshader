@@ -44,6 +44,7 @@ typedef enum MenuState {
         MENU_STATE_IMG_SELECT,
         MENU_STATE_HEIGHTMAP_EDIT,
         MENU_STATE_EDITOR_SELECT,
+		MENU_STATE_BRUSH_SELECT,
         NUM_STATES
 } MenuState;
 
@@ -54,6 +55,8 @@ typedef enum EditorSelectAction {
         EDITOR_ACTION_DELETE, //Deletes the editor
         EDITOR_ACTION_GOTO, // teleports the flycam to the editor selected
         EDITOR_ACTION_MOVE, //lets you move the editor
+	    EDITOR_ACTION_BRUSH, //allows you to use the brush
+
 } EditorSelectAction;
 
 

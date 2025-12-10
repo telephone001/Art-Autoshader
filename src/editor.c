@@ -483,6 +483,20 @@ int editor_init(
         );
         ERR_ASSERT_RET((err == 0), -4, "heightmap_mdl_init failed");
 
+		glGenTextures(1, &editor->hmap_tex);
+		glBindTexture(GL_TEXTURE_2D, editor->hmap_tex);
+
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F,
+             editor->hmap_w, editor->hmap_l, 0,
+             GL_RED, GL_FLOAT, editor->hmap);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+		glBindTexture(GL_TEXTURE_2D, 0);
+
         editor->cam = camera;     //copy the current camera into the editor
 
 

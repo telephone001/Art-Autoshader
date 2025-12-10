@@ -585,6 +585,16 @@ int main()
                         case EDITOR_ACTION_MOVE:
                                 //TODO
                                 break;
+						case EDITOR_ACTION_BRUSH:
+       						// Example: Right now just print the brush position.
+      				    	// Replace this with your actual brush code later.
+       						printf("Brush tool activated at %.3f, %.3f\n",
+                			gui_menu.ecam_data.mouse_offset.x,
+                			gui_menu.ecam_data.mouse_offset.y);
+						    // Always reset the action after handling it
+        					gui_menu.editor_action = EDITOR_ACTION_IDLE;
+       						break;
+					
                         default:
                         break;
                 }
