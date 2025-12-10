@@ -171,7 +171,14 @@ int editor_get_height(Editor* editor);
 void hmap_edit_edbert(Editor *editor);
 
 //using brush
-void apply_brush(Editor* editor, int cx, int cz, int radius, float strength);
+void apply_brush(
+    struct Editor* editor,
+    int bx,
+    int bz,
+    float radius,
+    float strength,
+    int mode
+);
 
 
 
