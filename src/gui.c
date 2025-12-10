@@ -302,6 +302,7 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 
 	nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
 	if (nk_button_label(gui_menu->ctx, "Brush Tool")) {
+    gui_menu->editor_action = EDITOR_ACTION_BRUSH;
 	}
 	
 	nk_layout_row_dynamic(gui_menu->ctx, 30, 3);
