@@ -397,9 +397,10 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 			    float nx = mx / (float)gui_menu->ecam_data.width;   // 0..1
 			    float ny = 1.0f - my / (float)gui_menu->ecam_data.height;
 			
-			    apply_brush(&editors[gui_menu->which_editor_selected],
-			                nx, ny,
-			                gui_menu);
+			    apply_brush(&g_editors[gui_menu->which_editor_selected],
+		            bx, bz,
+		            gui_menu->brush_radius,
+		            gui_menu->brush_strength);
 			}
 			
 			//printf("%f %f\n",
