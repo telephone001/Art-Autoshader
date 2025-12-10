@@ -286,6 +286,10 @@ int main()
         Editor editors[MAX_EDITORS] = {0};
         int edit_idx = 0; // if we were to add another editor, at what idx will it be added in editors
 
+		// Make editors accessible from gui.c
+		Editor* g_editors = editors;
+		int g_editor_count = MAX_EDITORS;
+
         glfwSetInputMode(wnd, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         GL_PRINT_ERR();
         
