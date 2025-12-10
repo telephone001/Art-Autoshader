@@ -144,8 +144,6 @@ int nuklear_menu_init(
 }
 
 
-
-
 /// @brief dynamically fits a nk image into the reminaing space of a gui menu.
 ///		you need to leave a vertical margin, which is for the other widgits
 /// @param ctx the context of the nuklear menu
@@ -298,12 +296,12 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 
 	nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
 	if (nk_button_label(gui_menu->ctx, "brush tool")) {
-    gui_menu->editor_action = EDITOR_ACTION_BRUSH;
+    		gui_menu->editor_action = EDITOR_ACTION_BRUSH;
 	}
 	
 	nk_layout_row_dynamic(gui_menu->ctx, 30, 3);
 
-	nk_checkbox_label(gui_menu->ctx, "perspective", &gui_menu->ecam_data.in_perspective);
+	nk_checkbox_label(gui_menu->ctx, "edit_mode", &gui_menu->ecam_data.in_perspective);
 
 	//slider
 	static float drag_scale = GUI_DRAG_SCALE_MIN;
@@ -336,7 +334,7 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 			gui_menu->ctx, 
 			gui_menu->ecam_data.tex_nk, 
 			(float)gui_menu->ecam_data.width / (float)gui_menu->ecam_data.height, 
-			150
+			180
 		);
 	} else {
 		// display an error message if texture not found
@@ -385,7 +383,11 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 			//	gui_menu->ecam_data.mouse_offset.x,
 			//	gui_menu->ecam_data.mouse_offset.y
 			//);
-			gui_menu->editor_action = EDITOR_ACTION_HMAP_EDIT;
+
+			// brush tool should only work in orthographic projection. 
+			if (gui_menu->ecam_data.in_perspective == 0) {
+				gui_menu->editor_action = EDITOR_ACTION_HMAP_EDIT;
+			}
 		}
 
 		//printf("%f %f\n", gui_menu->ecam_offset.x, gui_menu->ecam_offset.y);

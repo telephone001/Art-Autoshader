@@ -273,7 +273,7 @@ int main()
 
 
         GLuint point_light_tex, directional_light_tex;
-        load_2dtexture(&point_light_tex, "textures/sprinkles.png", GL_RGB);
+        load_2dtexture(&point_light_tex, "textures/point_light.jpg", GL_RGB);
         load_2dtexture(&directional_light_tex, "textures/directional_light.jpg", GL_RGB);
 
         LightSourcesData light_sources_data = {0};

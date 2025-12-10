@@ -20,6 +20,8 @@ int light_sources_data_init(LightSourcesData *light_sources, GLuint shader, GLui
                 .rd = {0},
         };
 
+        memset(lsd.lights, 0, sizeof(LightSource) * MAX_LIGHT_SOURCES);
+
         //TODO REMEMBER TO CHECK ERRORS !! 
         int err = light_sources_rd_init(&lsd.rd, shader, point_light_tex, directional_light_tex);
         ERR_ASSERT_RET((err >= 0), -2, "light sources renderdata could not be created");
