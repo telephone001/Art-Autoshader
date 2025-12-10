@@ -44,6 +44,7 @@ typedef enum MenuState {
         MENU_STATE_IMG_SELECT,
         MENU_STATE_HEIGHTMAP_EDIT,
         MENU_STATE_EDITOR_SELECT,
+		MENU_STATE_BRUSH_SELECT,
         NUM_STATES
 } MenuState;
 
