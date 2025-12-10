@@ -4,6 +4,8 @@
 #include "gui.h"
 #include "editor.h"
 
+extern Editor* g_editors;
+extern int g_editor_count;
 
 
 /// @brief creates an ecam_data given the width and height of framebuffer
