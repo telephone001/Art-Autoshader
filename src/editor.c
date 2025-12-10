@@ -869,3 +869,70 @@ void hmap_edit_zero(Editor *editor)
         
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
+
+void apply_brush(Editor *ed, float nx, float ny, MenuOptions *gui)
+{
+    int w = ed->hmap_width;
+    int h = ed->hmap_height;
+
+    // convert normalized to pixel
+    int cx = (int)(nx * w);
+    int cy = (int)(ny * h);
+
+    float radius = gui->brush_size;
+    float strength = gui->brush_strength;
+
+    for (int y = -radius; y <= radius; y++) {
+        for (int x = -radius; x <= radius; x++) {
+
+            int px = cx + x;
+            int py = cy + y;
+
+            if (px < 0 || py < 0 || px >= w || py >= h)
+                continue;
+
+            // circle mask
+            float dist = sqrtf(x*x + y*y);
+            if (dist > radius)
+                continue;
+
+            float falloff = 1.0f - (dist / radius);
+
+            float *val = &ed->height_map[py * w + px];
+
+            switch (gui->brush_mode) {
+                case 0: // raise
+                    *val += strength * falloff;
+                    break;
+                case 1: // lower
+                    *val -= strength * falloff;
+                    break;
+                case 2: // smooth
+                {
+                    float avg = 0.0f;
+                    int count = 0;
+
+                    for (int yy = -1; yy <= 1; yy++)
+                        for (int xx = -1; xx <= 1; xx++) {
+                            int sx = px + xx, sy = py + yy;
+                            if (sx >= 0 && sy >= 0 && sx < w && sy < h) {
+                                avg += ed->height_map[sy*w + sx];
+                                count++;
+                            }
+                        }
+
+                    avg /= count;
+                    *val = (*val * (1 - strength)) + (avg * strength);
+                }
+                break;
+
+                case 3: // flatten
+                    *val = gui->flatten_target_height; // you can define a constant if you want
+                    break;
+            }
+        }
+    }
+
+    ed->needs_upload = 1;
+}
+
