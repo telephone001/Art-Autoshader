@@ -33,7 +33,9 @@
 
 #endif
 
-
+// Global editor array accessible from gui.c
+Editor* g_editors = NULL;
+int g_editor_count = 0;
 
 #define SCR_LENGTH 800
 #define SCR_HEIGHT 800
@@ -287,8 +289,8 @@ int main()
         int edit_idx = 0; // if we were to add another editor, at what idx will it be added in editors
 
 		// Make editors accessible from gui.c
-		Editor* g_editors = editors;
-		int g_editor_count = MAX_EDITORS;
+		g_editors = editors;
+		g_editor_count = MAX_EDITORS;
 
         glfwSetInputMode(wnd, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         GL_PRINT_ERR();
