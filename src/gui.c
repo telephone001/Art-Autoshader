@@ -282,7 +282,7 @@ static void state_main_render(MenuOptions *const gui_menu)
 
 	nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
 	if (nk_button_label(gui_menu->ctx, "brush tool")) {
-		gui_menu->state = MENU_STATE_EDITOR_SELECT;
+		gui_menu->state = MENU_STATE_BRUSH_SELECT;
 	}
 }
 
