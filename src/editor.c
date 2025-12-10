@@ -870,33 +870,70 @@ void hmap_edit_zero(Editor *editor)
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void apply_brush(Editor* editor, int cx, int cz, int radius, float strength)
+void apply_brush(Editor* editor, int bx, int bz, float radius, float strength, int mode)
 {
     int w = editor->hmap_w;
-    int h = editor->hmap_l;
+    int l = editor->hmap_l;
+    float* hmap = editor->hmap;
 
-    for (int dz = -radius; dz <= radius; dz++)
-    for (int dx = -radius; dx <= radius; dx++)
-    {
-        int x = cx + dx;
-        int z = cz + dz;
+    float r2 = radius * radius;
 
-        if (x < 0 || x >= w || z < 0 || z >= h)
-            continue;
+    // Smooth requires a pre-pass
+    float avg = 0.0f;
+    int count = 0;
 
-        float dist = sqrtf(dx*dx + dz*dz);
-        if (dist > radius)
-            continue;
+    if (mode == 2) { // SMOOTH
+        for (int dz = -radius; dz <= radius; dz++) {
+            for (int dx = -radius; dx <= radius; dx++) {
+                int x = bx + dx;
+                int z = bz + dz;
+                if (x < 0 || z < 0 || x >= w || z >= l) continue;
+                if (dx*dx + dz*dz > r2) continue;
 
-        float falloff = 1.f - (dist / radius);
-
-        editor->hmap[z * w + x] += strength * falloff;
+                avg += hmap[z * w + x];
+                count++;
+            }
+        }
+        if (count > 0) avg /= (float)count;
     }
 
-    // Upload updated heightmap to GPU
+    // Apply the brush to heightmap
+    for (int dz = -radius; dz <= radius; dz++) {
+        for (int dx = -radius; dx <= radius; dx++) {
+            int x = bx + dx;
+            int z = bz + dz;
+            if (x < 0 || z < 0 || x >= w || z >= l) continue;
+            if (dx*dx + dz*dz > r2) continue;
+
+            float* v = &hmap[z * w + x];
+
+            switch (mode) {
+                case 0:  // RAISE
+                    *v += strength;
+                    break;
+
+                case 1:  // LOWER
+                    *v -= strength;
+                    break;
+
+                case 2:  // SMOOTH
+                    *v = *v + (avg - *v) * strength;
+                    break;
+
+                case 3:  // FLATTEN (flat to center value)
+                {
+                    float target = hmap[bz * w + bx];
+                    *v = *v + (target - *v) * strength;
+                    break;
+                }
+            }
+        }
+    }
+
+    // Upload updated hmap to GPU
     glBindBuffer(GL_ARRAY_BUFFER, editor->hmap_rd.vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0,
-        editor->hmap_rd.vertices_length * sizeof(float),
-        editor->hmap_rd.vertices);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBufferSubData(GL_ARRAY_BUFFER,
+                    0,
+                    sizeof(float) * editor->hmap_rd.vertices_length,
+                    editor->hmap);
 }
