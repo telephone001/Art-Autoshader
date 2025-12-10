@@ -38,6 +38,11 @@
 #define GUI_DRAG_SCALE_MIN 2000
 #define GUI_DRAG_SCALE_MAX 50000
 
+struct Editor;  // forward declare the struct
+
+extern struct Editor* g_editors;
+extern int g_editor_count;
+
 // If we ever want to make more states, we can. But right now there will only be one state
 typedef enum MenuState {
         MENU_STATE_MAIN,
