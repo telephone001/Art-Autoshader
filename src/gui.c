@@ -279,6 +279,11 @@ static void state_main_render(MenuOptions *const gui_menu)
 	if (nk_button_label(gui_menu->ctx, "select editor")) {
 		gui_menu->state = MENU_STATE_EDITOR_SELECT;
 	}
+
+	nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
+	if (nk_button_label(gui_menu->ctx, "brush tool")) {
+		gui_menu->state = MENU_STATE_EDITOR_SELECT;
+	}
 }
 
 
@@ -295,6 +300,10 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 		gui_menu->ecam_data.pos_offset.y = 0;
 	}
 
+	nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
+	if (nk_button_label(gui_menu->ctx, "Brush Tool")) {
+	}
+	
 	nk_layout_row_dynamic(gui_menu->ctx, 30, 3);
 
 	nk_checkbox_label(gui_menu->ctx, "perspective", &gui_menu->ecam_data.in_perspective);
