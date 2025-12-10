@@ -387,6 +387,21 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 			gui_menu->ecam_data.mouse_offset.x = (mouse_x - img_rect.x) / img_rect.w;
 			gui_menu->ecam_data.mouse_offset.y = (img_rect.y - mouse_y) / img_rect.h;
 
+			if (gui_menu->brush_enabled &&
+			    glfwGetMouseButton(wnd, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+			
+			    double mx, my;
+			    glfwGetCursorPos(wnd, &mx, &my);
+			
+			    // Convert window mouse coords → editor camera coords
+			    float nx = mx / (float)gui_menu->ecam_data.width;   // 0..1
+			    float ny = 1.0f - my / (float)gui_menu->ecam_data.height;
+			
+			    apply_brush(&editors[gui_menu->which_editor_selected],
+			                nx, ny,
+			                gui_menu);
+			}
+			
 			//printf("%f %f\n",
 			//	gui_menu->ecam_data.mouse_offset.x,
 			//	gui_menu->ecam_data.mouse_offset.y
@@ -482,12 +497,12 @@ static void state_select_brush(MenuOptions *const gui_menu)
     static int brush_mode = 0; // 0=raise, 1=lower, 2=smooth, 3=flatten
 
     nk_layout_row_dynamic(gui_menu->ctx, 30, 2);
-    if (nk_option_label(gui_menu->ctx, "Raise", brush_mode == 0)) brush_mode = 0;
-    if (nk_option_label(gui_menu->ctx, "Lower", brush_mode == 1)) brush_mode = 1;
+    if (nk_option_label(gui_menu->ctx, "Raise", gui_menu->brush_mode == 0)) gui_menu->brush_mode = 0;
+    if (nk_option_label(gui_menu->ctx, "Lower", gui_menu->brush_mode == 1)) gui_menu->brush_mode = 1;
 
     nk_layout_row_dynamic(gui_menu->ctx, 30, 2);
-    if (nk_option_label(gui_menu->ctx, "Smooth", brush_mode == 2)) brush_mode = 2;
-    if (nk_option_label(gui_menu->ctx, "Flatten", brush_mode == 3)) brush_mode = 3;
+    if (nk_option_label(gui_menu->ctx, "Smooth", gui_menu->brush_mode == 2)) gui_menu->brush_mode = 2;
+    if (nk_option_label(gui_menu->ctx, "Flatten", gui_menu->brush_mode == 3)) gui_menu->brush_mode = 3;
 
     // -------------------------
     // Brush Size
@@ -495,7 +510,7 @@ static void state_select_brush(MenuOptions *const gui_menu)
     static float brush_size = 10.0f;
     nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
     nk_label(gui_menu->ctx, "Brush Size", NK_TEXT_LEFT);
-    nk_slider_float(gui_menu->ctx, 1.0f, &brush_size, 100.0f, 1.0f);
+    nk_slider_float(gui_menu->ctx, 1.0f, &gui_menu->brush_size, 100.0f, 1.0f);
 
     // -------------------------
     // Brush Strength
@@ -503,7 +518,7 @@ static void state_select_brush(MenuOptions *const gui_menu)
     static float brush_strength = 0.2f;
     nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
     nk_label(gui_menu->ctx, "Brush Strength", NK_TEXT_LEFT);
-    nk_slider_float(gui_menu->ctx, 0.0f, &brush_strength, 1.0f, 0.01f);
+    nk_slider_float(gui_menu->ctx, 0.0f, &gui_menu->brush_strength, 1.0f, 0.01f);
 
     // -------------------------
     // Debug Button
