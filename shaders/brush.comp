@@ -1,0 +1,28 @@
+#version 430 core
+
+layout(local_size_x = 16, local_size_y = 16) in;
+
+layout(r32f, binding = 0) uniform image2D heightmap;
+
+uniform vec2 u_center;   // uv 0..1
+uniform float u_radius;  // uv radius
+uniform float u_strength;
+
+void main() {
+    ivec2 pix = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 size = imageSize(heightmap);
+
+    // convert pixel to uv
+    vec2 uv = (vec2(pix) + 0.5) / vec2(size);
+
+    float d = distance(uv, u_center);
+    if (d > u_radius) return;
+
+    float t = smoothstep(u_radius, 0.0, d);
+    float delta = t * u_strength;
+
+    float h = imageLoad(heightmap, pix).r;
+    h += delta;
+
+    imageStore(heightmap, pix, vec4(h, 0,0,1));
+}
