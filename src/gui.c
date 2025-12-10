@@ -384,24 +384,44 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 
 		//left click means edit
 		if (glfwGetMouseButton(wnd, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
-			gui_menu->ecam_data.mouse_offset.x = (mouse_x - img_rect.x) / img_rect.w;
-			gui_menu->ecam_data.mouse_offset.y = (img_rect.y - mouse_y) / img_rect.h;
 
-			if (gui_menu->brush_enabled &&
-			    glfwGetMouseButton(wnd, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
-			
-			    double mx, my;
-			    glfwGetCursorPos(wnd, &mx, &my);
-			
-			    // Convert window mouse coords → editor camera coords
-			    float nx = mx / (float)gui_menu->ecam_data.width;   // 0..1
-			    float ny = 1.0f - my / (float)gui_menu->ecam_data.height;
-			
-			    apply_brush(&g_editors[gui_menu->which_editor_selected],
-		            bx, bz,
-		            gui_menu->brush_radius,
-		            gui_menu->brush_strength);
-			}
+    // Compute UV position (already correct)
+    gui_menu->ecam_data.mouse_offset.x = (mouse_x - img_rect.x) / img_rect.w;
+    gui_menu->ecam_data.mouse_offset.y = (img_rect.y - mouse_y) / img_rect.h;
+
+    // ---------------------------------------------------------
+    // NEW: Convert UV → heightmap grid coordinates
+    // ---------------------------------------------------------
+    Editor* editor = &g_editors[gui_menu->which_editor_selected];
+
+    int bx = gui_menu->ecam_data.mouse_offset.x * editor->hmap_w;
+    int bz = gui_menu->ecam_data.mouse_offset.y * editor->hmap_l;
+
+    // Clamp (recommended)
+    if (bx < 0) bx = 0;
+    if (bx >= editor->hmap_w) bx = editor->hmap_w - 1;
+
+    if (bz < 0) bz = 0;
+    if (bz >= editor->hmap_l) bz = editor->hmap_l - 1;
+
+    // ---------------------------------------------------------
+    // Apply brush only when brush mode enabled
+    // ---------------------------------------------------------
+    if (gui_menu->brush_enabled) {
+
+        apply_brush(
+            editor,
+            bx, bz,
+            gui_menu->brush_size,
+            gui_menu->brush_strength,
+            gui_menu->brush_mode
+        );
+    }
+
+    // original heightmap edit logic
+    if (gui_menu->ecam_data.in_perspective == 0)
+        gui_menu->editor_action = EDITOR_ACTION_HMAP_EDIT;
+}
 			
 			//printf("%f %f\n",
 			//	gui_menu->ecam_data.mouse_offset.x,
