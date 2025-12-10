@@ -298,6 +298,8 @@ GLuint raytrace(GLFWwindow *wnd, MenuOptions *gui_menu, Editor *editors, LightSo
                                 intensities[i*cmp_width+j] = 0;
                         }
 
+                        // skip directional for now
+
                         for (int k = 0; k < num_light_sources; k++) {
                                 float t_ray;
                                 vec3s intersec;
@@ -320,7 +322,7 @@ GLuint raytrace(GLFWwindow *wnd, MenuOptions *gui_menu, Editor *editors, LightSo
                                         &t_ray, 
                                         &intersec
                                 );
-                        
+                                
                                 if (!hit) {
                                         printf("ERR raytrace\n");
                                 } else {
@@ -520,7 +522,7 @@ int main()
                                 if (hit) {
                                     //vec3s world_point = glms_vec3_add(camera.pos, glms_vec3_scale(cam_dirs[i * width + j], t_ray));
                                     vec3s world_point = glms_mat4_mulv3(trans, point, 1);
-                                    light_source_add(&light_sources_data, (LightSource) { POINT, world_point, 1.0f });
+                                    light_source_add(&light_sources_data, (LightSource) { DIRECTIONAL, world_point, 0.4f });
                                     //printf("CPU Hit at t=%.6f: %.6f %.6f %.6f\n", t_ray, V3_X(world_point), V3_Y(world_point), V3_Z(world_point));
                                     lights_added_cpu++; // Increment CPU lights count
                                 }
@@ -598,15 +600,19 @@ int main()
                 }
 #endif
 
+
                 //Render the editors
                 glEnable(GL_DEPTH_TEST);
                 glDepthFunc(GL_LESS);
+
                 
                 for (int i = 0; i < MAX_EDITORS; i++) {
                         if (editors[i].mdl_cam_proj.vao != 0 ) {
                                 editor_render(&(editors[i]), 0, gui_menu.hmap_opacity, flycam_projection, flycam_view);
                         }
                 }
+                
+                light_sources_render(&light_sources_data, flycam_projection, flycam_view);
                 
 ///////////////////////////////// TESTS ON FRAMEBUFFER ////////////////////////////////////
 
@@ -644,9 +650,6 @@ int main()
 
 ///////////////////////////////// TESTS ON FRAMEBUFFER ////////////////////////////////////
 
-                
-                // REMEMBER THAT THIS CAN RETURN AN ERROR
-                light_sources_render(&light_sources_data, flycam_projection, flycam_view);
 
 ///////////////////////////////// GUI_STUFF ////////////////////////////////////   
 		if (in_menu) {
