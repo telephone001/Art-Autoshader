@@ -280,10 +280,6 @@ static void state_main_render(MenuOptions *const gui_menu)
 		gui_menu->state = MENU_STATE_EDITOR_SELECT;
 	}
 
-	nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
-	if (nk_button_label(gui_menu->ctx, "brush tool")) {
-		gui_menu->state = MENU_STATE_BRUSH_SELECT;
-	}
 }
 
 
@@ -301,7 +297,7 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 	}
 
 	nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
-	if (nk_button_label(gui_menu->ctx, "Brush Tool")) {
+	if (nk_button_label(gui_menu->ctx, "brush tool")) {
     gui_menu->editor_action = EDITOR_ACTION_BRUSH;
 	}
 	
