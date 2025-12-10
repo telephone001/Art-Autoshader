@@ -479,7 +479,7 @@ void nuklear_menu_render(GLFWwindow *wnd, float delta_time, MenuOptions *const g
 			state_select_editor(gui_menu);
 			break;
 		case MENU_STATE_BRUSH_SELECT:
-			state_select_editor(gui_menu);
+			state_select_brush(gui_menu);
 		break;
 
 		default:
