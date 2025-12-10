@@ -170,6 +170,8 @@ int editor_get_height(Editor* editor);
 // modify heightmap (your preset)
 void hmap_edit_edbert(Editor *editor);
 
+//using brush
+void apply_brush(Editor* editor, int cx, int cz, int radius, float strength);
 
 
 
