@@ -440,7 +440,7 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 		prev_mouse_x = mouse_x;
 		prev_mouse_y = mouse_y;
 	}
-}
+
 
 static void state_view_output(MenuOptions *const gui_menu)
 {
