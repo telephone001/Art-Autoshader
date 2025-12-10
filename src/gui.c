@@ -456,6 +456,66 @@ static void state_select_editor(MenuOptions *const gui_menu)
 
 }
 
+static void state_select_brush(MenuOptions *const gui_menu)
+{
+    nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
+    if (nk_button_label(gui_menu->ctx, "back to main menu")) {
+        gui_menu->state = MENU_STATE_MAIN;
+    }
+
+    nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
+    nk_label(gui_menu->ctx, "Brush Tool", NK_TEXT_LEFT);
+
+    // -------------------------
+    // Enable Brush Toggle
+    // -------------------------
+    static int brush_enabled = 0;
+    nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
+    nk_checkbox_label(gui_menu->ctx, "Enable Brush", &brush_enabled);
+
+    // -------------------------
+    // Brush Mode Selection
+    // -------------------------
+    nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
+    nk_label(gui_menu->ctx, "Brush Mode:", NK_TEXT_LEFT);
+
+    static int brush_mode = 0; // 0=raise, 1=lower, 2=smooth, 3=flatten
+
+    nk_layout_row_dynamic(gui_menu->ctx, 30, 2);
+    if (nk_option_label(gui_menu->ctx, "Raise", brush_mode == 0)) brush_mode = 0;
+    if (nk_option_label(gui_menu->ctx, "Lower", brush_mode == 1)) brush_mode = 1;
+
+    nk_layout_row_dynamic(gui_menu->ctx, 30, 2);
+    if (nk_option_label(gui_menu->ctx, "Smooth", brush_mode == 2)) brush_mode = 2;
+    if (nk_option_label(gui_menu->ctx, "Flatten", brush_mode == 3)) brush_mode = 3;
+
+    // -------------------------
+    // Brush Size
+    // -------------------------
+    static float brush_size = 10.0f;
+    nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
+    nk_label(gui_menu->ctx, "Brush Size", NK_TEXT_LEFT);
+    nk_slider_float(gui_menu->ctx, 1.0f, &brush_size, 100.0f, 1.0f);
+
+    // -------------------------
+    // Brush Strength
+    // -------------------------
+    static float brush_strength = 0.2f;
+    nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
+    nk_label(gui_menu->ctx, "Brush Strength", NK_TEXT_LEFT);
+    nk_slider_float(gui_menu->ctx, 0.0f, &brush_strength, 1.0f, 0.01f);
+
+    // -------------------------
+    // Debug Button
+    // -------------------------
+    nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
+    if (nk_button_label(gui_menu->ctx, "Apply Test Brush")) {
+        printf("DEBUG: Apply Brush (mode=%d, size=%.2f, strength=%.2f)\n",
+            brush_mode, brush_size, brush_strength);
+    }
+}
+
+
 /// @brief This is a drawcall for the gui menu
 /// @param wnd window to render the menu onto
 /// @param delta_time the delta time
