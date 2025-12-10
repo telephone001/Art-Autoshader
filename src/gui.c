@@ -115,7 +115,6 @@ int nuklear_menu_init(
 		.brush_size = 4,
 		.brush_strength = 0.01,
 		.brush_mode = 0,   // 0 = raise, 1 = lower, 2 = smooth, 3 = flatten
-		.brush_enabled = 1,
 		
 	};
 	
@@ -293,10 +292,6 @@ static void state_main_render(MenuOptions *const gui_menu)
 		gui_menu->state = MENU_STATE_VIEW_OUTPUT;
 	}
 
-	nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
-	if (nk_button_label(gui_menu->ctx, "brush tool")) {
-		gui_menu->state = MENU_STATE_BRUSH_SELECT;
-	}
 }
 
 
@@ -308,6 +303,12 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 	}
 
 	nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
+	if (nk_button_label(gui_menu->ctx, "choose brush")) {
+		gui_menu->state = MENU_STATE_BRUSH_SELECT;
+	}
+	
+
+	nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
 	if (nk_button_label(gui_menu->ctx, "center")) {
 		gui_menu->ecam_data.pos_offset.x = 0;
 		gui_menu->ecam_data.pos_offset.y = 0;
@@ -315,7 +316,7 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 	
 	nk_layout_row_dynamic(gui_menu->ctx, 30, 3);
 
-	nk_checkbox_label(gui_menu->ctx, "perspective", &gui_menu->ecam_data.in_perspective);
+	nk_checkbox_label(gui_menu->ctx, "drag mode", &gui_menu->ecam_data.in_perspective);
 
 	//slider
 	static float drag_scale = GUI_DRAG_SCALE_MIN;
@@ -379,23 +380,23 @@ static void state_heightmap_edit_render(MenuOptions *const gui_menu, float delta
 
 		glfwGetCursorPos(wnd, &mouse_x, &mouse_y);
 
-		//Right click means drag
-		if (glfwGetMouseButton(wnd, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
-			gui_menu->ecam_data.pos_offset.x -= (mouse_x - prev_mouse_x) * delta_time * drag_scale / img_rect.w;
-			gui_menu->ecam_data.pos_offset.y += (mouse_y - prev_mouse_y) * delta_time * drag_scale / img_rect.h;
-		}
-
-		//change the corner back to the bottom left for editor pos calculation
-		img_rect.y += img_rect.h;
-
-		//left click means edit
 		if (glfwGetMouseButton(wnd, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
-		    	gui_menu->ecam_data.mouse_offset.x = (mouse_x - img_rect.x) / img_rect.w;
-		    	gui_menu->ecam_data.mouse_offset.y = (img_rect.y - mouse_y) / img_rect.h;
-		    
-		    	// original heightmap edit logic
-		    	if (gui_menu->ecam_data.in_perspective == 0)
-		    	    gui_menu->editor_action = EDITOR_ACTION_HMAP_EDIT;
+			//change the corner back to the bottom left for editor pos calculation
+			img_rect.y += img_rect.h;
+			
+			//if we are in perspective, then we drag
+			if (gui_menu->ecam_data.in_perspective == 1) {
+				gui_menu->ecam_data.pos_offset.x -= (mouse_x - prev_mouse_x) * delta_time * drag_scale / img_rect.w;
+				gui_menu->ecam_data.pos_offset.y += (mouse_y - prev_mouse_y) * delta_time * drag_scale / img_rect.h;
+			} else {
+				//if we are in orthogonal, we edit
+				gui_menu->ecam_data.mouse_offset.x = (mouse_x - img_rect.x) / img_rect.w;
+			    	gui_menu->ecam_data.mouse_offset.y = (img_rect.y - mouse_y) / img_rect.h;
+			
+			    	// original heightmap edit logic
+			    	if (gui_menu->ecam_data.in_perspective == 0)
+			    	    	gui_menu->editor_action = EDITOR_ACTION_HMAP_EDIT;
+			}
 		}
 	}
 
@@ -462,19 +463,12 @@ static void state_select_editor(MenuOptions *const gui_menu)
 static void state_select_brush(MenuOptions *const gui_menu)
 {
     nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
-    if (nk_button_label(gui_menu->ctx, "back to main menu")) {
-        gui_menu->state = MENU_STATE_MAIN;
+    if (nk_button_label(gui_menu->ctx, "back to editor")) {
+        gui_menu->state = MENU_STATE_HEIGHTMAP_EDIT;
     }
 
     nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
     nk_label(gui_menu->ctx, "Brush Tool", NK_TEXT_LEFT);
-
-    // -------------------------
-    // Enable Brush Toggle
-    // -------------------------
-    static int brush_enabled = 0;
-    nk_layout_row_dynamic(gui_menu->ctx, 30, 1);
-    nk_checkbox_label(gui_menu->ctx, "Enable Brush", &brush_enabled);
 
     // -------------------------
     // Brush Mode Selection
@@ -551,7 +545,7 @@ void nuklear_menu_render(GLFWwindow *wnd, float delta_time, MenuOptions *const g
 		case MENU_STATE_VIEW_OUTPUT:
 			state_view_output(gui_menu);
 			break;
-
+		
 		case MENU_STATE_BRUSH_SELECT:
 			state_select_brush(gui_menu);
 			break;

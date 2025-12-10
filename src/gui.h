@@ -109,7 +109,6 @@ typedef struct MenuOptions {
 		float brush_size;
 		float brush_strength;
 		int brush_mode;   // 0 = raise, 1 = lower, 2 = smooth, 3 = flatten
-		int brush_enabled;
 } MenuOptions;
 
 
